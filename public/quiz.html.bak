@@ -1,0 +1,2129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Upside Down — UI/UX Quiz Championship</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Special+Elite&display=swap"
+    rel="stylesheet">
+  <style>
+    /* ── PROTECTION: disable selection, drag, print ── */
+    * {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    input,
+    textarea {
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      user-select: text;
+    }
+
+    @media print {
+
+      html,
+      body {
+        visibility: hidden !important;
+      }
+    }
+
+    /* Right-click blocked toast */
+    .rc-blocked {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: rgba(120, 0, 0, 0.97);
+      border: 1px solid #cc1111;
+      padding: 10px 22px;
+      font-family: 'Special Elite', serif;
+      font-size: 12px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: #fff;
+      z-index: 9999;
+      transition: transform .35s cubic-bezier(.34, 1.56, .64, 1), opacity .3s;
+      opacity: 0;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .rc-blocked.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    :root {
+      --bg: #030308;
+      --surface: #070710;
+      --card: #0b0b1a;
+      --border: #1a1a3a;
+      --red: #cc1111;
+      --red-glow: rgba(204, 17, 17, 0.3);
+      --red-dim: rgba(204, 17, 17, 0.12);
+      --amber: #d4780a;
+      --amber-glow: rgba(212, 120, 10, 0.3);
+      --amber-dim: rgba(212, 120, 10, 0.12);
+      --easy: #cc1111;
+      --easy-dim: rgba(204, 17, 17, 0.12);
+      --medium: #d4780a;
+      --medium-dim: rgba(212, 120, 10, 0.12);
+      --hard: #7a1a8a;
+      --hard-dim: rgba(122, 26, 138, 0.18);
+      --accent: #cc1111;
+      --accent-dim: rgba(204, 17, 17, 0.15);
+      --text: #e0d8c8;
+      --text-dim: #9a9080;
+      --white: #f5f0e8;
+      --flicker-speed: 8s;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Courier Prime', monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      cursor: default;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(120, 0, 0, 0.15) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 20% 80%, rgba(80, 0, 80, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse 40% 30% at 80% 70%, rgba(100, 20, 0, 0.08) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      background-size: 200px;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.6;
+    }
+
+    .vignette {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse 100% 100% at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.7) 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .lights-strip {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      gap: 0;
+      z-index: 100;
+      overflow: hidden;
+      background: linear-gradient(90deg, rgba(10, 0, 0, 0.8), rgba(5, 0, 10, 0.8));
+      border-bottom: 1px solid rgba(80, 0, 0, 0.3);
+    }
+
+    .light-bulb {
+      width: 10px;
+      height: 14px;
+      border-radius: 50% 50% 40% 40%;
+      flex-shrink: 0;
+      position: relative;
+      margin: 0 4px;
+      box-shadow: 0 0 6px currentColor, 0 0 12px currentColor;
+      animation: flicker var(--flicker-speed) ease-in-out infinite;
+    }
+
+    .light-bulb::before {
+      content: '';
+      position: absolute;
+      top: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 6px;
+      background: #333;
+      border-radius: 1px;
+    }
+
+    .light-bulb::after {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.15;
+      filter: blur(4px);
+    }
+
+    .lb-red {
+      color: #ff2020;
+      background: #ff2020;
+    }
+
+    .lb-amber {
+      color: #ff9500;
+      background: #ff9500;
+    }
+
+    .lb-green {
+      color: #20ff40;
+      background: #20ff40;
+    }
+
+    .lb-blue {
+      color: #2060ff;
+      background: #2060ff;
+    }
+
+    .lb-yellow {
+      color: #ffee00;
+      background: #ffee00;
+    }
+
+    .lb-purple {
+      color: #cc20ff;
+      background: #cc20ff;
+    }
+
+    .lb-white {
+      color: #ffffff;
+      background: #ffffff;
+    }
+
+    @keyframes flicker {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      2% {
+        opacity: 0.3
+      }
+
+      4% {
+        opacity: 1
+      }
+
+      20% {
+        opacity: 1
+      }
+
+      22% {
+        opacity: 0.5
+      }
+
+      24% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 1
+      }
+
+      52% {
+        opacity: 0.2
+      }
+
+      54% {
+        opacity: 1
+      }
+
+      80% {
+        opacity: 0.8
+      }
+    }
+
+    .screen {
+      display: none;
+      position: relative;
+      z-index: 1;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    .screen.fade-in {
+      animation: fadeIn 0.6s ease both;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.98);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .st-title {
+      font-family: 'Special Elite', serif;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--red);
+      text-shadow:
+        0 0 10px var(--red-glow),
+        0 0 30px var(--red-glow),
+        0 0 60px rgba(204, 17, 17, 0.15);
+      animation: titleGlow 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes titleGlow {
+      from {
+        text-shadow: 0 0 10px var(--red-glow), 0 0 30px var(--red-glow), 0 0 60px rgba(204, 17, 17, 0.15);
+      }
+
+      to {
+        text-shadow: 0 0 20px var(--red-glow), 0 0 50px var(--red-glow), 0 0 100px rgba(204, 17, 17, 0.2), 0 0 150px rgba(204, 17, 17, 0.08);
+      }
+    }
+
+    /* ══ TEAM LOGIN ══ */
+    #team-login {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 60px 20px 40px;
+      text-align: center;
+    }
+
+    .login-wrap {
+      max-width: 460px;
+      width: 100%;
+    }
+
+    .login-eyebrow {
+      font-family: 'Special Elite', serif;
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 20px;
+    }
+
+    .login-title-main {
+      font-size: clamp(36px, 7vw, 64px);
+      margin-bottom: 6px;
+      line-height: 1;
+    }
+
+    .login-subtitle {
+      font-family: 'Libre Baskerville', serif;
+      font-size: 14px;
+      color: var(--text-dim);
+      font-style: italic;
+      margin-bottom: 40px;
+      letter-spacing: 0.05em;
+    }
+
+    .reg-card {
+      background: rgba(10, 5, 5, 0.9);
+      border: 1px solid rgba(150, 0, 0, 0.3);
+      border-radius: 4px;
+      padding: 44px 40px;
+      width: 100%;
+      box-shadow:
+        0 0 0 1px rgba(100, 0, 0, 0.2),
+        0 32px 80px rgba(0, 0, 0, .8),
+        inset 0 0 60px rgba(80, 0, 0, 0.05);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .reg-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--red), var(--amber), var(--red), transparent);
+      animation: scanline 3s linear infinite;
+    }
+
+    @keyframes scanline {
+      0% {
+        opacity: 0.5
+      }
+
+      50% {
+        opacity: 1
+      }
+
+      100% {
+        opacity: 0.5
+      }
+    }
+
+    .input-group {
+      text-align: left;
+      margin-bottom: 20px;
+    }
+
+    .input-group label {
+      display: block;
+      font-family: 'Special Elite', serif;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 8px;
+    }
+
+    .input-group input {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(150, 50, 50, 0.3);
+      color: var(--text);
+      font-family: 'Courier Prime', monospace;
+      font-size: 15px;
+      padding: 13px 16px;
+      border-radius: 2px;
+      outline: none;
+      transition: all 0.25s;
+      letter-spacing: 0.05em;
+    }
+
+    .input-group input:focus {
+      border-color: var(--red);
+      box-shadow: 0 0 0 2px var(--red-dim), 0 0 20px var(--red-dim);
+    }
+
+    .input-group input.error {
+      border-color: #ff4444;
+      box-shadow: 0 0 0 2px rgba(255, 68, 68, 0.2);
+    }
+
+    .input-err {
+      font-size: 12px;
+      color: #ff6060;
+      margin-top: 6px;
+      display: none;
+      font-style: italic;
+    }
+
+    .start-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: var(--red);
+      color: #fff;
+      font-family: 'Special Elite', serif;
+      font-size: 15px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 16px;
+      border-radius: 2px;
+      border: none;
+      cursor: pointer;
+      margin-top: 8px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.25s;
+      box-shadow: 0 0 20px var(--red-dim);
+    }
+
+    .start-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent);
+    }
+
+    .start-btn:hover {
+      background: #dd2222;
+      box-shadow: 0 0 30px var(--red-glow), 0 0 60px rgba(204, 17, 17, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .start-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ══ LANDING ══ */
+    #landing {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 60px 20px 40px;
+      text-align: center;
+    }
+
+    .landing-title {
+      font-size: clamp(28px, 5vw, 60px);
+      line-height: 1.1;
+      margin-bottom: 12px;
+    }
+
+    .landing-title span {
+      color: var(--red);
+    }
+
+    .team-greeting {
+      font-family: 'Libre Baskerville', serif;
+      font-size: 18px;
+      color: #f5c842;
+      font-style: italic;
+      margin-bottom: 12px;
+      text-shadow: 0 0 20px rgba(245, 200, 66, 0.4);
+    }
+
+    .landing-sub {
+      font-size: 14px;
+      color: var(--text-dim);
+      max-width: 500px;
+      line-height: 1.7;
+      margin-bottom: 40px;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 36px;
+    }
+
+    .stat-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(10, 5, 5, 0.8);
+      border: 1px solid rgba(150, 0, 0, 0.25);
+      border-radius: 2px;
+      padding: 12px 20px;
+      transition: all 0.25s;
+    }
+
+    .stat-pill:hover {
+      border-color: var(--red);
+      box-shadow: 0 0 15px var(--red-dim);
+    }
+
+    .stat-icon {
+      font-size: 18px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.05em;
+    }
+
+    .stat-val {
+      font-family: 'Special Elite', serif;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .section-preview {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .sp-card {
+      background: rgba(10, 5, 5, 0.8);
+      border: 1px solid rgba(100, 0, 0, 0.2);
+      border-radius: 2px;
+      padding: 18px 22px;
+      min-width: 150px;
+      text-align: left;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.25s;
+    }
+
+    .sp-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(150, 0, 0, 0.5);
+    }
+
+    .sp-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+    }
+
+    .sp-card.easy::before {
+      background: var(--red);
+      box-shadow: 0 0 8px var(--red-glow);
+    }
+
+    .sp-card.medium::before {
+      background: var(--amber);
+      box-shadow: 0 0 8px var(--amber-glow);
+    }
+
+    .sp-card.hard::before {
+      background: #9933bb;
+      box-shadow: 0 0 8px rgba(153, 51, 187, 0.5);
+    }
+
+    .sp-label {
+      font-family: 'Special Elite', serif;
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .sp-card.easy .sp-label {
+      color: var(--red);
+    }
+
+    .sp-card.medium .sp-label {
+      color: var(--amber);
+    }
+
+    .sp-card.hard .sp-label {
+      color: #bb44dd;
+    }
+
+    .sp-count {
+      font-family: 'Special Elite', serif;
+      font-size: 28px;
+    }
+
+    .sp-topics {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+
+    .begin-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--red);
+      color: #fff;
+      font-family: 'Special Elite', serif;
+      font-size: 16px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 18px 48px;
+      border: none;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s;
+      clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+      box-shadow: 0 0 30px var(--red-dim);
+    }
+
+    .begin-btn:hover {
+      box-shadow: 0 0 50px var(--red-glow), 0 0 100px rgba(204, 17, 17, 0.15);
+      transform: scale(1.03);
+    }
+
+    /* ══ QUIZ LAYOUT ══ */
+    #quiz {
+      flex-direction: row;
+      min-height: 100vh;
+      align-items: flex-start;
+      padding-top: 36px;
+    }
+
+    .sidebar {
+      width: 270px;
+      min-height: calc(100vh - 36px);
+      background: rgba(5, 2, 2, 0.95);
+      border-right: 1px solid rgba(100, 0, 0, 0.25);
+      padding: 24px 18px;
+      position: sticky;
+      top: 36px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+
+    .sidebar-logo {
+      font-family: 'Special Elite', serif;
+      font-size: 12px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--red);
+      text-shadow: 0 0 10px var(--red-glow);
+    }
+
+    .sidebar-team {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    .timer-box {
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid rgba(150, 0, 0, 0.3);
+      border-radius: 2px;
+      padding: 16px;
+      text-align: center;
+      box-shadow: inset 0 0 20px rgba(80, 0, 0, 0.1);
+    }
+
+    .timer-label {
+      font-family: 'Special Elite', serif;
+      font-size: 9px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      margin-bottom: 8px;
+    }
+
+    .timer-val {
+      font-family: 'Special Elite', serif;
+      font-size: 36px;
+      color: var(--red);
+      text-shadow: 0 0 15px var(--red-glow);
+      transition: color 0.3s;
+      letter-spacing: 0.05em;
+    }
+
+    .timer-val.warn {
+      color: #ff3333;
+      animation: blink 0.7s ease infinite;
+      text-shadow: 0 0 20px rgba(255, 50, 50, 0.8);
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0.4
+      }
+    }
+
+    .prog-label {
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      letter-spacing: 0.05em;
+    }
+
+    .prog-bar {
+      height: 4px;
+      background: rgba(80, 40, 40, 0.3);
+      border-radius: 0;
+      overflow: hidden;
+      margin-bottom: 2px;
+    }
+
+    .prog-fill {
+      height: 100%;
+      border-radius: 0;
+      transition: width 0.4s ease;
+    }
+
+    .prog-fill.easy {
+      background: var(--red);
+      box-shadow: 0 0 6px var(--red-glow);
+    }
+
+    .prog-fill.medium {
+      background: var(--amber);
+      box-shadow: 0 0 6px var(--amber-glow);
+    }
+
+    .prog-fill.hard {
+      background: #aa44cc;
+      box-shadow: 0 0 6px rgba(170, 68, 204, 0.5);
+    }
+
+    .section-tabs {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .sec-tab {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border: 1px solid rgba(100, 40, 40, 0.2);
+      background: transparent;
+      cursor: pointer;
+      color: var(--text-dim);
+      font-family: 'Special Elite', serif;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      transition: all 0.2s;
+    }
+
+    .sec-tab.active-easy {
+      background: var(--easy-dim);
+      border-color: var(--red);
+      color: var(--red);
+      text-shadow: 0 0 8px var(--red-glow);
+    }
+
+    .sec-tab.active-medium {
+      background: var(--medium-dim);
+      border-color: var(--amber);
+      color: var(--amber);
+    }
+
+    .sec-tab.active-hard {
+      background: var(--hard-dim);
+      border-color: #aa44cc;
+      color: #cc66ee;
+    }
+
+    .sec-tab:hover:not(.active-easy):not(.active-medium):not(.active-hard) {
+      background: rgba(80, 20, 20, 0.2);
+      color: var(--text);
+    }
+
+    .sec-count {
+      font-family: 'Special Elite', serif;
+      font-size: 11px;
+    }
+
+    .q-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 4px;
+    }
+
+    .q-dot {
+      width: 30px;
+      height: 30px;
+      border: 1px solid rgba(100, 40, 40, 0.3);
+      background: rgba(10, 5, 5, 0.8);
+      cursor: pointer;
+      font-family: 'Special Elite', serif;
+      font-size: 9px;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .q-dot:hover {
+      border-color: var(--red);
+      color: var(--red);
+      box-shadow: 0 0 8px var(--red-dim);
+      transform: scale(1.1);
+    }
+
+    .q-dot.answered {
+      background: rgba(80, 0, 0, 0.3);
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    .q-dot.current-q {
+      background: var(--red);
+      color: #fff;
+      border-color: var(--red);
+      box-shadow: 0 0 12px var(--red-glow);
+    }
+
+    .q-dot.flagged {
+      background: rgba(180, 90, 0, 0.2);
+      border-color: var(--amber);
+      color: var(--amber);
+    }
+
+    .main-content {
+      flex: 1;
+      padding: 32px 40px;
+      max-width: calc(100% - 270px);
+    }
+
+    .q-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      gap: 20px;
+    }
+
+    .q-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .q-num {
+      font-family: 'Special Elite', serif;
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 0.12em;
+    }
+
+    .diff-badge {
+      font-family: 'Special Elite', serif;
+      font-size: 9px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border: 1px solid;
+    }
+
+    .diff-badge.easy {
+      background: var(--easy-dim);
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    .diff-badge.medium {
+      background: var(--medium-dim);
+      border-color: var(--amber);
+      color: var(--amber);
+    }
+
+    .diff-badge.hard {
+      background: var(--hard-dim);
+      border-color: #aa44cc;
+      color: #cc66ee;
+    }
+
+    .cat-badge {
+      font-size: 10px;
+      color: var(--text-dim);
+      background: rgba(30, 10, 10, 0.8);
+      border: 1px solid rgba(80, 40, 40, 0.3);
+      padding: 4px 12px;
+      font-family: 'Special Elite', serif;
+      letter-spacing: 0.08em;
+    }
+
+    .flag-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: 1px solid rgba(80, 40, 40, 0.3);
+      color: var(--text-dim);
+      padding: 7px 14px;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: 'Special Elite', serif;
+      letter-spacing: 0.05em;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .flag-btn:hover,
+    .flag-btn.flagged {
+      background: rgba(180, 90, 0, 0.1);
+      border-color: var(--amber);
+      color: var(--amber);
+      box-shadow: 0 0 10px var(--amber-dim);
+    }
+
+    .q-text {
+      font-family: 'Libre Baskerville', serif;
+      font-size: 19px;
+      font-weight: 400;
+      line-height: 1.65;
+      color: var(--white);
+      margin-bottom: 32px;
+      max-width: 720px;
+      text-shadow: 0 0 40px rgba(255, 240, 200, 0.05);
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      max-width: 720px;
+    }
+
+    .option {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      background: rgba(8, 3, 3, 0.8);
+      border: 1px solid rgba(80, 40, 40, 0.25);
+      padding: 16px 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .option::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 0;
+      background: rgba(150, 0, 0, 0.15);
+      transition: width 0.3s ease;
+    }
+
+    .option:hover::before,
+    .option.selected::before {
+      width: 100%;
+    }
+
+    .option:hover {
+      border-color: var(--red);
+      box-shadow: 0 0 20px var(--red-dim);
+      transform: translateX(3px);
+    }
+
+    .option.selected {
+      border-color: var(--red);
+      box-shadow: 0 0 20px var(--red-dim);
+      transform: translateX(3px);
+    }
+
+    .option.selected .opt-letter {
+      background: var(--red);
+      color: #fff;
+      border-color: var(--red);
+      box-shadow: 0 0 10px var(--red-glow);
+    }
+
+    .opt-letter {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+      border: 1px solid rgba(100, 40, 40, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Special Elite', serif;
+      font-size: 13px;
+      color: var(--text-dim);
+      transition: all 0.2s;
+      position: relative;
+      z-index: 1;
+    }
+
+    .opt-text {
+      font-size: 14px;
+      line-height: 1.6;
+      padding-top: 5px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @keyframes optionPop {
+      0% {
+        transform: translateX(3px) scale(1)
+      }
+
+      30% {
+        transform: translateX(3px) scale(1.01)
+      }
+
+      100% {
+        transform: translateX(3px) scale(1)
+      }
+    }
+
+    .option.just-selected {
+      animation: optionPop 0.3s ease;
+    }
+
+    .q-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 40px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(80, 40, 40, 0.2);
+      max-width: 720px;
+    }
+
+    .nav-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border: 1px solid rgba(100, 40, 40, 0.3);
+      background: rgba(10, 5, 5, 0.8);
+      color: var(--text);
+      cursor: pointer;
+      font-family: 'Special Elite', serif;
+      font-size: 13px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover {
+      border-color: var(--red);
+      color: var(--red);
+      box-shadow: 0 0 15px var(--red-dim);
+      transform: translateY(-1px);
+    }
+
+    .nav-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .nav-btn.submit-btn {
+      background: var(--red);
+      border-color: var(--red);
+      color: #fff;
+      box-shadow: 0 0 20px var(--red-dim);
+    }
+
+    .nav-btn.submit-btn:hover {
+      box-shadow: 0 0 40px var(--red-glow);
+    }
+
+    /* ══ RESULTS ══ */
+    #results {
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 80px 20px 60px;
+    }
+
+    .result-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .result-title {
+      font-size: clamp(28px, 5vw, 52px);
+      margin-bottom: 8px;
+    }
+
+    .result-team {
+      font-family: 'Libre Baskerville', serif;
+      font-size: 16px;
+      color: #f5c842;
+      font-style: italic;
+      margin-bottom: 6px;
+    }
+
+    .score-ring {
+      width: 160px;
+      height: 160px;
+      position: relative;
+      margin: 0 auto 28px;
+    }
+
+    .score-ring svg {
+      transform: rotate(-90deg);
+    }
+
+    .ring-bg {
+      fill: none;
+      stroke: rgba(80, 40, 40, 0.3);
+      stroke-width: 10;
+    }
+
+    .ring-fill {
+      fill: none;
+      stroke-width: 10;
+      stroke-linecap: square;
+      transition: stroke-dashoffset 1.8s ease;
+    }
+
+    .score-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .score-pct {
+      font-family: 'Special Elite', serif;
+      font-size: 32px;
+    }
+
+    .score-lbl {
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .result-cards {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 32px;
+      max-width: 900px;
+    }
+
+    .res-card {
+      background: rgba(10, 5, 5, 0.8);
+      border: 1px solid rgba(80, 40, 40, 0.25);
+      padding: 20px 24px;
+      text-align: center;
+      min-width: 130px;
+      transition: all 0.25s;
+    }
+
+    .res-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--red);
+      box-shadow: 0 0 20px var(--red-dim);
+    }
+
+    .res-card-val {
+      font-family: 'Special Elite', serif;
+      font-size: 30px;
+      margin-bottom: 4px;
+    }
+
+    .res-card-label {
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .section-breakdown {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 32px;
+      max-width: 900px;
+    }
+
+    .sec-res {
+      flex: 1;
+      min-width: 200px;
+      background: rgba(10, 5, 5, 0.8);
+      border: 1px solid rgba(80, 40, 40, 0.25);
+      padding: 20px;
+    }
+
+    .sec-res-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .sec-res-title {
+      font-family: 'Special Elite', serif;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+    }
+
+    .sec-res-score {
+      font-family: 'Special Elite', serif;
+      font-size: 22px;
+    }
+
+    .sec-bar {
+      height: 6px;
+      background: rgba(80, 40, 40, 0.2);
+      overflow: hidden;
+    }
+
+    .sec-bar-fill {
+      height: 100%;
+      transition: width 1s ease 0.3s;
+    }
+
+    .result-done-msg {
+      text-align: center;
+      padding: 24px 32px;
+      background: rgba(10, 5, 5, 0.8);
+      border: 1px solid rgba(80, 40, 40, 0.25);
+      max-width: 520px;
+      color: var(--text-dim);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .result-done-msg strong {
+      color: var(--text);
+      font-family: 'Special Elite', serif;
+      letter-spacing: 0.08em;
+    }
+
+    /* ══ MODAL ══ */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .modal {
+      background: rgba(8, 3, 3, 0.97);
+      border: 1px solid rgba(150, 0, 0, 0.4);
+      padding: 40px;
+      max-width: 440px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 0 60px rgba(150, 0, 0, 0.2), 0 40px 80px rgba(0, 0, 0, .8);
+      position: relative;
+    }
+
+    .modal::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--red), transparent);
+    }
+
+    .modal h3 {
+      font-family: 'Special Elite', serif;
+      font-size: 22px;
+      margin-bottom: 10px;
+      letter-spacing: 0.12em;
+      color: var(--white);
+    }
+
+    .modal p {
+      color: var(--text-dim);
+      font-size: 14px;
+      line-height: 1.7;
+      margin-bottom: 28px;
+    }
+
+    .modal-btns {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .modal-cancel {
+      background: rgba(30, 15, 15, 0.8);
+      border: 1px solid rgba(100, 40, 40, 0.3);
+      color: var(--text);
+      padding: 12px 24px;
+      cursor: pointer;
+      font-family: 'Special Elite', serif;
+      font-size: 13px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+
+    .modal-cancel:hover {
+      border-color: var(--text);
+    }
+
+    .modal-confirm {
+      background: var(--red);
+      color: #fff;
+      border: none;
+      padding: 12px 28px;
+      cursor: pointer;
+      font-family: 'Special Elite', serif;
+      font-size: 13px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+
+    .modal-confirm:hover {
+      box-shadow: 0 0 20px var(--red-glow);
+      transform: translateY(-1px);
+    }
+
+    /* ══ CONNECTING SCREEN ══ */
+    #connecting {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 60px 20px;
+    }
+
+    .connecting-text {
+      font-family: 'Special Elite', serif;
+      font-size: 20px;
+      letter-spacing: 0.2em;
+      color: var(--red);
+      text-shadow: 0 0 15px var(--red-glow);
+      animation: blink 1.2s ease infinite;
+      text-transform: uppercase;
+    }
+
+    .typewriter-char {
+      display: inline;
+      white-space: pre;
+      opacity: 0;
+      animation: typeIn 0.05s forwards;
+    }
+
+    @keyframes typeIn {
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes demoEnter {
+      from {
+        transform: scale(0.5) rotate(-10deg);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1) rotate(0);
+        opacity: 1;
+      }
+    }
+
+    .demo-appear {
+      animation: demoEnter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    .save-indicator {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 50;
+      font-family: 'Special Elite', serif;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      padding: 6px 12px;
+      background: rgba(10, 5, 5, 0.9);
+      border: 1px solid rgba(80, 40, 40, 0.2);
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+
+    .save-indicator.show {
+      opacity: 1;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        display: none;
+      }
+
+      .main-content {
+        max-width: 100%;
+        padding: 20px;
+      }
+
+      #quiz {
+        padding-top: 36px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="vignette"></div>
+  <div class="lights-strip" id="lights-strip"></div>
+  <div class="save-indicator" id="save-indicator">SAVED TO SERVER</div>
+
+  <!-- Right-click blocked toast -->
+  <div class="rc-blocked" id="rc-blocked">⬡ Right-click is disabled during the quiz</div>
+
+  <!-- CONNECTING -->
+  <div class="screen active" id="connecting">
+    <p class="connecting-text" id="connecting-text">● Entering the Upside Down...</p>
+  </div>
+
+  <!-- TEAM LOGIN -->
+  <div class="screen" id="team-login">
+    <div class="login-wrap">
+      <div class="login-eyebrow">Hawkins Middle School · AV Club</div>
+      <div class="st-title login-title-main" id="st-logo-text">STRANGER<br>THINGS</div>
+      <div class="login-subtitle">UI/UX Quiz Championship — Round I</div>
+      <div class="reg-card">
+        <div class="input-group">
+          <label>Team ID</label>
+          <input type="text" id="login-id-input" placeholder="TEAM01" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="input-group">
+          <label>Access Code</label>
+          <input type="password" id="login-pass-input" placeholder="••••••••" autocomplete="off">
+        </div>
+        <div class="input-group">
+          <label>Team Members <span style="color:var(--text-dim);font-size:9px">(optional)</span></label>
+          <input type="text" id="login-members-input" placeholder="e.g. Mike, Eleven, Dustin" autocomplete="off">
+        </div>
+        <div class="input-err" id="login-err"></div>
+        <button class="start-btn" onclick="teamLogin()">
+          <span>⬡</span> Enter the Upside Down
+        </button>
+      </div>
+      <div style="margin-top:20px;font-size:11px;color:var(--text-dim);line-height:1.7;text-align:center;">
+        Once you begin, the gate cannot be reopened.<br>
+        Do not close this tab — your progress is saved to the server.
+      </div>
+    </div>
+  </div>
+
+  <!-- LANDING / BRIEFING -->
+  <div class="screen" id="landing">
+    <div>
+      <div class="team-greeting" id="team-greeting"></div>
+      <div class="st-title landing-title">
+        The Quiz<br><span>Awaits</span>
+      </div>
+      <p class="landing-sub">
+        60 questions across three levels of the Upside Down. Your answers are saved to the server in real time — a
+        refresh will restore your progress. Stay focused. The Mind Flayer is watching.
+      </p>
+      <div class="stats-row">
+        <div class="stat-pill"><span class="stat-icon">⏱</span>
+          <div>
+            <div class="stat-val">38:00</div>
+            <div class="stat-label">Time Limit</div>
+          </div>
+        </div>
+        <div class="stat-pill"><span class="stat-icon">📋</span>
+          <div>
+            <div class="stat-val">60</div>
+            <div class="stat-label">Questions</div>
+          </div>
+        </div>
+        <div class="stat-pill"><span class="stat-icon">🔀</span>
+          <div>
+            <div class="stat-val">Random</div>
+            <div class="stat-label">Order</div>
+          </div>
+        </div>
+      </div>
+      <div class="section-preview">
+        <div class="sp-card easy">
+          <div class="sp-label">Section A</div>
+          <div class="sp-count">15</div>
+          <div class="sp-topics">UX Basics · Color · Typography · Design Process</div>
+        </div>
+        <div class="sp-card medium">
+          <div class="sp-label">Section B</div>
+          <div class="sp-count">30</div>
+          <div class="sp-topics">Interaction · Research · IA · Accessibility · Systems</div>
+        </div>
+        <div class="sp-card hard">
+          <div class="sp-label">Section C</div>
+          <div class="sp-count">15</div>
+          <div class="sp-topics">Advanced Methods · Strategy · Metrics · Governance</div>
+        </div>
+      </div>
+      <button class="begin-btn" onclick="startQuiz()">
+        ▶ &nbsp; ENTER THE GATE
+      </button>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="screen" id="quiz">
+    <div class="sidebar">
+      <div>
+        <div class="sidebar-logo">⬡ HAWKINS AV CLUB</div>
+        <div class="sidebar-team" id="sidebar-team-name"></div>
+      </div>
+      <div class="timer-box">
+        <div class="timer-label">Time Remaining</div>
+        <div class="timer-val" id="timer">38:00</div>
+      </div>
+      <div>
+        <div class="prog-label"><span
+            style="color:var(--red);font-family:'Special Elite',serif;letter-spacing:.08em">SECTION A</span><span
+            id="prog-easy-txt">0/15</span></div>
+        <div class="prog-bar">
+          <div class="prog-fill easy" id="prog-easy" style="width:0%"></div>
+        </div>
+        <div class="prog-label" style="margin-top:8px"><span
+            style="color:var(--amber);font-family:'Special Elite',serif;letter-spacing:.08em">SECTION B</span><span
+            id="prog-med-txt">0/30</span></div>
+        <div class="prog-bar">
+          <div class="prog-fill medium" id="prog-med" style="width:0%"></div>
+        </div>
+        <div class="prog-label" style="margin-top:8px"><span
+            style="color:#aa44cc;font-family:'Special Elite',serif;letter-spacing:.08em">SECTION C</span><span
+            id="prog-hard-txt">0/15</span></div>
+        <div class="prog-bar">
+          <div class="prog-fill hard" id="prog-hard" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="section-tabs">
+        <button class="sec-tab" id="tab-easy" onclick="jumpSection(0)">
+          <span>⬡ Section A · Easy</span><span class="sec-count" id="tab-easy-cnt">0/15</span>
+        </button>
+        <button class="sec-tab" id="tab-med" onclick="jumpSection(15)">
+          <span>⬡ Section B · Moderate</span><span class="sec-count" id="tab-med-cnt">0/30</span>
+        </button>
+        <button class="sec-tab" id="tab-hard" onclick="jumpSection(45)">
+          <span>⬡ Section C · Advanced</span><span class="sec-count" id="tab-hard-cnt">0/15</span>
+        </button>
+      </div>
+      <div>
+        <div class="prog-label" style="margin-bottom:8px"><span>Question Map</span></div>
+        <div class="q-grid" id="q-grid"></div>
+      </div>
+      <div
+        style="font-size:10px;color:var(--text-dim);line-height:1.6;margin-top:auto;padding-top:8px;border-top:1px solid rgba(80,40,40,0.2)">
+        <span style="color:var(--red)">■</span> Answered &nbsp;
+        <span style="color:var(--amber)">■</span> Flagged &nbsp;
+        <span style="color:rgba(255,255,255,0.3)">■</span> Skipped
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div class="q-header">
+        <div class="q-meta">
+          <span class="q-num" id="q-num">Q 1 / 60</span>
+          <span class="diff-badge easy" id="diff-badge">Easy</span>
+          <span class="cat-badge" id="cat-badge">Category</span>
+        </div>
+        <button class="flag-btn" id="flag-btn" onclick="toggleFlag()">🚩 Flag</button>
+      </div>
+      <div class="q-text" id="q-text"></div>
+      <div class="options" id="options"></div>
+      <div class="q-footer">
+        <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">← Prev</button>
+        <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next →</button>
+        <button class="nav-btn submit-btn" id="submit-btn" style="display:none" onclick="openSubmit()">Submit Quiz
+          ⬡</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="screen" id="results">
+    <div class="result-header">
+      <div class="result-team" id="result-team-name"></div>
+      <div class="st-title result-title" id="result-title">Quiz Complete</div>
+      <div class="score-ring">
+        <svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+          <circle class="ring-bg" cx="80" cy="80" r="65" />
+          <circle class="ring-fill" id="ring-fill" cx="80" cy="80" r="65" stroke-dasharray="408.4"
+            stroke-dashoffset="408.4" />
+        </svg>
+        <div class="score-center">
+          <div class="score-pct" id="score-pct">0%</div>
+          <div class="score-lbl">Score</div>
+        </div>
+      </div>
+    </div>
+    <div class="result-cards">
+      <div class="res-card">
+        <div class="res-card-val" id="r-correct" style="color:var(--red)">0</div>
+        <div class="res-card-label">Correct</div>
+      </div>
+      <div class="res-card">
+        <div class="res-card-val" id="r-wrong" style="color:#ff6060">0</div>
+        <div class="res-card-label">Wrong</div>
+      </div>
+      <div class="res-card">
+        <div class="res-card-val" id="r-skip" style="color:var(--text-dim)">0</div>
+        <div class="res-card-label">Skipped</div>
+      </div>
+      <div class="res-card">
+        <div class="res-card-val" id="r-time" style="color:var(--amber)">—</div>
+        <div class="res-card-label">Time Used</div>
+      </div>
+    </div>
+    <div class="section-breakdown">
+      <div class="sec-res">
+        <div class="sec-res-top"><span class="sec-res-title" style="color:var(--red)">SECTION A · EASY</span><span
+            class="sec-res-score" style="color:var(--red)" id="r-easy-score">0/15</span></div>
+        <div class="sec-bar">
+          <div class="sec-bar-fill" id="r-easy-bar" style="background:var(--red);width:0%"></div>
+        </div>
+      </div>
+      <div class="sec-res">
+        <div class="sec-res-top"><span class="sec-res-title" style="color:var(--amber)">SECTION B · MODERATE</span><span
+            class="sec-res-score" style="color:var(--amber)" id="r-med-score">0/30</span></div>
+        <div class="sec-bar">
+          <div class="sec-bar-fill" id="r-med-bar" style="background:var(--amber);width:0%"></div>
+        </div>
+      </div>
+      <div class="sec-res">
+        <div class="sec-res-top"><span class="sec-res-title" style="color:#aa44cc">SECTION C · ADVANCED</span><span
+            class="sec-res-score" style="color:#aa44cc" id="r-hard-score">0/15</span></div>
+        <div class="sec-bar">
+          <div class="sec-bar-fill" id="r-hard-bar" style="background:#aa44cc;width:0%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="result-done-msg">
+      <strong>Assessment Submitted Successfully</strong><br>
+      Your results are stored on the server. The demogorgon has recorded your score. You may now close this window.
+    </div>
+  </div>
+
+  <!-- Submit Modal -->
+  <div class="modal-overlay" id="submit-modal">
+    <div class="modal">
+      <h3>Close the Gate?</h3>
+      <p id="modal-msg">Ready to submit your assessment to Hawkins Lab?</p>
+      <div class="modal-btns">
+        <button class="modal-cancel" onclick="closeSubmit()">Review Again</button>
+        <button class="modal-confirm" onclick="submitQuiz()">Submit ⬡</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = '';
+    let currentTeam = null;
+    let sessionToken = null;
+    let questionOrder = [];
+    let allQuestions = [];
+    let answers = [];
+    let flags = [];
+    let totalSeconds = 38 * 60;
+    let usedSeconds = 0;
+    let timerInterval = null;
+    let heartbeatInterval = null;
+    let current = 0;
+    let lastSaveTs = 0;
+
+    /* ══════════════════════════════════════════
+       PROTECTION BLOCK
+       ══════════════════════════════════════════ */
+
+    // 1. Block right-click — show themed toast
+    document.addEventListener('contextmenu', function (e) {
+      e.preventDefault();
+      const toast = document.getElementById('rc-blocked');
+      toast.classList.add('show');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => toast.classList.remove('show'), 2400);
+      return false;
+    });
+
+    // 2. Block keyboard shortcuts
+    document.addEventListener('keydown', function (e) {
+      const k = e.key.toLowerCase();
+      const ctrl = e.ctrlKey || e.metaKey;
+      // Ctrl+C, Ctrl+X, Ctrl+A, Ctrl+S, Ctrl+U, Ctrl+P
+      if (ctrl && ['c', 'x', 'a', 's', 'u', 'p'].includes(k)) { e.preventDefault(); return false; }
+      // Ctrl+Shift+I / J / C (DevTools)
+      if (ctrl && e.shiftKey && ['i', 'j', 'c'].includes(k)) { e.preventDefault(); return false; }
+      // F12
+      if (e.key === 'F12') { e.preventDefault(); return false; }
+      // Ctrl+Shift+K (Firefox DevTools)
+      if (ctrl && e.shiftKey && k === 'k') { e.preventDefault(); return false; }
+      // Arrow key nav — handled later, allowed through
+    });
+
+    // 3. Block copy and cut events
+    document.addEventListener('copy', function (e) { e.preventDefault(); return false; });
+    document.addEventListener('cut', function (e) { e.preventDefault(); return false; });
+
+    // 4. Block drag-to-copy
+    document.addEventListener('dragstart', function (e) { e.preventDefault(); return false; });
+
+    // 5. Block print
+    window.onbeforeprint = function () { return false; };
+
+    // 6. Disable text selection via JS (inputs are still selectable via CSS above)
+    document.onselectstart = function (e) {
+      if (e.target && e.target.tagName === 'INPUT') return true;
+      e.preventDefault();
+      return false;
+    };
+
+    /* ══════════════════════════════════════════
+       END PROTECTION BLOCK
+       ══════════════════════════════════════════ */
+
+    // ── Christmas lights ──
+    (function buildLights() {
+      const strip = document.getElementById('lights-strip');
+      const colors = ['lb-red', 'lb-amber', 'lb-green', 'lb-blue', 'lb-yellow', 'lb-purple', 'lb-white'];
+      const count = Math.floor(window.innerWidth / 22);
+      for (let i = 0; i < count; i++) {
+        const b = document.createElement('div');
+        b.className = 'light-bulb ' + colors[i % colors.length];
+        b.style.animationDelay = (Math.random() * 8) + 's';
+        b.style.animationDuration = (6 + Math.random() * 6) + 's';
+        strip.appendChild(b);
+      }
+    })();
+
+    // ── Connecting → Login transition ──
+    setTimeout(() => {
+      showScreen('team-login');
+      document.getElementById('connecting').remove();
+    }, 1200);
+
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active'); s.classList.remove('fade-in');
+      });
+      const el = document.getElementById(id);
+      el.classList.add('active');
+      setTimeout(() => el.classList.add('fade-in'), 10);
+    }
+
+    function showSaved() {
+      const el = document.getElementById('save-indicator');
+      el.classList.add('show');
+      clearTimeout(el._t);
+      el._t = setTimeout(() => el.classList.remove('show'), 2000);
+    }
+
+    // ── Tab / window visibility detection ──
+    let lastBlurTime = 0;
+    function reportTabSwitch() {
+      const now = Date.now();
+      if (now - lastBlurTime < 2000) return;
+      lastBlurTime = now;
+      if (!sessionToken || !currentTeam) return;
+      fetch(API + '/api/quiz/tabswitch', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamId: currentTeam.teamId, sessionToken })
+      }).catch(() => { });
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && sessionToken) reportTabSwitch();
+    });
+    window.addEventListener('blur', () => {
+      if (sessionToken) reportTabSwitch();
+    });
+
+    // ── Team Login ──
+    async function teamLogin() {
+      const id = document.getElementById('login-id-input').value.trim();
+      const pass = document.getElementById('login-pass-input').value;
+      const members = document.getElementById('login-members-input').value.trim();
+      const errEl = document.getElementById('login-err');
+      errEl.style.display = 'none';
+
+      if (!id || !pass) {
+        errEl.textContent = 'Enter your Team ID and access code.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      try {
+        const res = await fetch(API + '/api/team/login', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ teamId: id, pass, members })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          errEl.textContent = data.error || 'Login failed.';
+          errEl.style.display = 'block';
+          return;
+        }
+        sessionToken = data.sessionToken;
+        questionOrder = data.questionOrder;
+        answers = data.answers;
+        flags = data.flags;
+        totalSeconds = data.totalSeconds;
+        usedSeconds = data.usedSeconds;
+        currentTeam = { teamId: data.teamId, name: data.teamName };
+
+        const qRes = await fetch(API + '/api/questions');
+        allQuestions = await qRes.json();
+
+        document.getElementById('team-greeting').textContent = `Welcome back, ${data.teamName}! 👋`;
+        showScreen('landing');
+        connectWS();
+      } catch (e) {
+        errEl.textContent = 'Could not reach the server. Try again.';
+        errEl.style.display = 'block';
+      }
+    }
+
+    // ── WebSocket ──
+    let ws;
+    function connectWS() {
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      ws = new WebSocket(`${proto}://${location.host}`);
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ type: 'AUTH_TEAM', teamId: currentTeam.teamId, sessionToken }));
+      };
+      ws.onclose = () => setTimeout(connectWS, 3000);
+    }
+
+    // ── Quiz Start ──
+    function startQuiz() {
+      document.getElementById('sidebar-team-name').textContent = currentTeam.name;
+      showScreen('quiz');
+      buildGrid();
+      renderQuestion(0);
+      startTimer();
+      startHeartbeat();
+      updateProgress();
+    }
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      updateTimerDisplay();
+      timerInterval = setInterval(() => {
+        totalSeconds--;
+        usedSeconds++;
+        updateTimerDisplay();
+        if (totalSeconds <= 0) { clearInterval(timerInterval); submitQuiz(); }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const m = Math.floor(totalSeconds / 60);
+      const s = totalSeconds % 60;
+      const el = document.getElementById('timer');
+      el.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      el.classList.toggle('warn', totalSeconds < 300);
+    }
+
+    function startHeartbeat() {
+      clearInterval(heartbeatInterval);
+      heartbeatInterval = setInterval(() => {
+        if (!sessionToken) return;
+        fetch(API + '/api/quiz/heartbeat', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ teamId: currentTeam.teamId, sessionToken, usedSeconds, totalSeconds })
+        }).catch(() => { });
+      }, 15000);
+    }
+
+    function buildGrid() {
+      const grid = document.getElementById('q-grid');
+      grid.innerHTML = '';
+      for (let i = 0; i < 60; i++) {
+        const d = document.createElement('div');
+        d.className = 'q-dot'; d.id = `dot-${i}`;
+        d.textContent = i + 1;
+        d.onclick = () => renderQuestion(i);
+        grid.appendChild(d);
+      }
+    }
+
+    function renderQuestion(idx) {
+      current = idx;
+      const origIdx = questionOrder[idx];
+      const q = allQuestions[origIdx];
+      document.getElementById('q-num').textContent = `Q ${idx + 1} / 60`;
+      const diffEl = document.getElementById('diff-badge');
+      diffEl.className = `diff-badge ${q.section}`;
+      diffEl.textContent = q.section === 'easy' ? 'Section A — Easy' : q.section === 'medium' ? 'Section B — Moderate' : 'Section C — Advanced';
+      document.getElementById('cat-badge').textContent = q.cat;
+
+      const textEl = document.getElementById('q-text');
+      textEl.textContent = '';
+      const chars = q.text.split('');
+      chars.forEach((ch, i) => {
+        const span = document.createElement('span');
+        span.className = 'typewriter-char';
+        span.textContent = ch;
+        span.style.animationDelay = (i * 15) + 'ms';
+        textEl.appendChild(span);
+      });
+
+      const opts = document.getElementById('options');
+      opts.innerHTML = '';
+      q.opts.forEach((o, i) => {
+        const div = document.createElement('div');
+        div.className = 'option' + (answers[idx] === i ? ' selected' : '');
+        div.innerHTML = `<div class="opt-letter">${['A', 'B', 'C', 'D'][i]}</div><div class="opt-text">${o}</div>`;
+        div.onclick = () => selectAnswer(idx, i, div);
+        opts.appendChild(div);
+      });
+
+      const flagBtn = document.getElementById('flag-btn');
+      flagBtn.classList.toggle('flagged', !!flags[idx]);
+      flagBtn.textContent = flags[idx] ? '🚩 Flagged' : '🚩 Flag';
+      document.getElementById('prev-btn').disabled = idx === 0;
+      const isLast = idx === 59;
+      document.getElementById('next-btn').style.display = isLast ? 'none' : '';
+      document.getElementById('submit-btn').style.display = isLast ? '' : 'none';
+      updateDots(); updateProgress(); updateSectionTabs();
+    }
+
+    async function selectAnswer(qIdx, optIdx, div) {
+      div.classList.add('just-selected');
+      setTimeout(() => div.classList.remove('just-selected'), 300);
+      answers[qIdx] = optIdx;
+      document.querySelectorAll('.option').forEach((el, i) => el.classList.toggle('selected', i === optIdx));
+      updateDots(); updateProgress();
+      try {
+        await fetch(API + '/api/quiz/answer', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ teamId: currentTeam.teamId, sessionToken, qIndex: qIdx, answer: optIdx })
+        });
+        showSaved();
+      } catch { }
+    }
+
+    function navigate(dir) {
+      const next = current + dir;
+      if (next >= 0 && next < 60) renderQuestion(next);
+    }
+    function jumpSection(startIdx) { renderQuestion(startIdx); }
+
+    async function toggleFlag() {
+      flags[current] = !flags[current];
+      const btn = document.getElementById('flag-btn');
+      btn.classList.toggle('flagged', flags[current]);
+      btn.textContent = flags[current] ? '🚩 Flagged' : '🚩 Flag';
+      updateDots();
+      try {
+        await fetch(API + '/api/quiz/flag', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ teamId: currentTeam.teamId, sessionToken, qIndex: current, flagged: flags[current] })
+        });
+      } catch { }
+    }
+
+    function updateDots() {
+      for (let i = 0; i < 60; i++) {
+        const d = document.getElementById(`dot-${i}`);
+        if (!d) continue;
+        d.className = 'q-dot';
+        if (i === current) d.classList.add('current-q');
+        else if (flags[i]) d.classList.add('flagged');
+        else if (answers[i] !== null) d.classList.add('answered');
+      }
+    }
+
+    function updateProgress() {
+      const eAns = answers.slice(0, 15).filter(x => x !== null).length;
+      const mAns = answers.slice(15, 45).filter(x => x !== null).length;
+      const hAns = answers.slice(45, 60).filter(x => x !== null).length;
+      document.getElementById('prog-easy').style.width = (eAns / 15 * 100) + '%';
+      document.getElementById('prog-med').style.width = (mAns / 30 * 100) + '%';
+      document.getElementById('prog-hard').style.width = (hAns / 15 * 100) + '%';
+      document.getElementById('prog-easy-txt').textContent = `${eAns}/15`;
+      document.getElementById('prog-med-txt').textContent = `${mAns}/30`;
+      document.getElementById('prog-hard-txt').textContent = `${hAns}/15`;
+      document.getElementById('tab-easy-cnt').textContent = `${eAns}/15`;
+      document.getElementById('tab-med-cnt').textContent = `${mAns}/30`;
+      document.getElementById('tab-hard-cnt').textContent = `${hAns}/15`;
+    }
+
+    function updateSectionTabs() {
+      document.getElementById('tab-easy').className = 'sec-tab' + (current < 15 ? ' active-easy' : '');
+      document.getElementById('tab-med').className = 'sec-tab' + (current >= 15 && current < 45 ? ' active-medium' : '');
+      document.getElementById('tab-hard').className = 'sec-tab' + (current >= 45 ? ' active-hard' : '');
+    }
+
+    function openSubmit() {
+      const unanswered = answers.filter(x => x === null).length;
+      document.getElementById('modal-msg').textContent = unanswered > 0
+        ? `You have ${unanswered} unanswered questions. They'll be marked as skipped. Proceed?`
+        : `All 60 questions answered. Ready to close the gate?`;
+      document.getElementById('submit-modal').classList.add('open');
+    }
+    function closeSubmit() { document.getElementById('submit-modal').classList.remove('open'); }
+
+    async function submitQuiz() {
+      clearInterval(timerInterval);
+      clearInterval(heartbeatInterval);
+      closeSubmit();
+      try {
+        const res = await fetch(API + '/api/quiz/submit', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ teamId: currentTeam.teamId, sessionToken, usedSeconds })
+        });
+        const result = await res.json();
+        showScreen('results');
+        renderResults(result);
+      } catch (e) {
+        alert('Submission failed — check connection.');
+      }
+    }
+
+    function renderResults(r) {
+      document.getElementById('result-team-name').textContent = currentTeam ? `Team: ${currentTeam.name}` : '';
+      document.getElementById('score-pct').textContent = r.pct + '%';
+      document.getElementById('r-correct').textContent = r.correct;
+      document.getElementById('r-wrong').textContent = r.wrong;
+      document.getElementById('r-skip').textContent = r.skip;
+      const uMin = Math.floor((r.usedSeconds || 0) / 60), uSec = (r.usedSeconds || 0) % 60;
+      document.getElementById('r-time').textContent = `${uMin}m ${uSec}s`;
+      const title = r.pct >= 80 ? 'YOU SURVIVED THE UPSIDE DOWN' : r.pct >= 60 ? 'CLOSE ENCOUNTER' : r.pct >= 40 ? 'THE DEMOGORGON ESCAPED' : 'CONSUMED BY THE SHADOW';
+      document.getElementById('result-title').textContent = title;
+      document.getElementById('r-easy-score').textContent = `${r.eC}/15`;
+      document.getElementById('r-med-score').textContent = `${r.mC}/30`;
+      document.getElementById('r-hard-score').textContent = `${r.hC}/15`;
+      setTimeout(() => {
+        document.getElementById('r-easy-bar').style.width = (r.eC / 15 * 100) + '%';
+        document.getElementById('r-med-bar').style.width = (r.mC / 30 * 100) + '%';
+        document.getElementById('r-hard-bar').style.width = (r.hC / 15 * 100) + '%';
+        const circumference = 2 * Math.PI * 65;
+        const offset = circumference - (r.pct / 100) * circumference;
+        const ring = document.getElementById('ring-fill');
+        const col = r.pct >= 70 ? '#cc1111' : r.pct >= 45 ? '#d4780a' : '#7a1a8a';
+        ring.setAttribute('stroke', col);
+        ring.style.strokeDashoffset = offset;
+        document.getElementById('score-pct').style.color = col;
+      }, 200);
+    }
+
+    // Keyboard nav (arrow keys + answer shortcuts — still allowed)
+    document.addEventListener('keydown', (e) => {
+      if (!document.getElementById('quiz').classList.contains('active')) return;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') navigate(1);
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') navigate(-1);
+      if (['1', '2', '3', '4'].includes(e.key)) {
+        const optIdx = parseInt(e.key) - 1;
+        const opts = document.querySelectorAll('.option');
+        if (opts[optIdx]) opts[optIdx].click();
+      }
+      if (e.key === 'f' || e.key === 'F') toggleFlag();
+    });
+  </script>
+</body>
+
+</html>
