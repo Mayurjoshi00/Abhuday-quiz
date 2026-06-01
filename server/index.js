@@ -19,16 +19,27 @@ app.use(express.static(path.join(__dirname, '../public')));
 const ADMIN_PASSWORD = 'chmod777';
 
 const TEAM_CREDENTIALS = [
-  { id: 'TEAM01', pass: 'hawk#9271', name: 'Team Alpha'   },
-  { id: 'TEAM02', pass: 'upsd@5583', name: 'Team Beta'    },
-  { id: 'TEAM03', pass: 'gate!7734', name: 'Team Gamma'   },
-  { id: 'TEAM04', pass: 'mind$4421', name: 'Team Delta'   },
-  { id: 'TEAM05', pass: 'demo%8812', name: 'Team Epsilon' },
-  { id: 'TEAM06', pass: 'flux&3390', name: 'Team Zeta'    },
-  { id: 'TEAM07', pass: 'labs*6617', name: 'Team Eta'     },
-  { id: 'TEAM08', pass: 'vine!2245', name: 'Team Theta'   },
-  { id: 'TEAM09', pass: 'will@7753', name: 'Team Iota'    },
-  { id: 'TEAM10', pass: 'elev#3381', name: 'Team Kappa'   },
+  { id: 'TEAM01', pass: 'hawk#9271', name: 'Team Mike'   },
+  { id: 'TEAM02', pass: 'upsd@5583', name: 'Team Eleven'    },
+  { id: 'TEAM03', pass: 'gate!7734', name: 'Team Dustin'   },
+  { id: 'TEAM04', pass: 'mind$4421', name: 'Team Lucas'   },
+  { id: 'TEAM05', pass: 'demo%8812', name: 'Team Demos' },
+  { id: 'TEAM06', pass: 'flux&3390', name: 'Team Vecna'    },
+  { id: 'TEAM07', pass: 'labs*6617', name: 'Team Hopper'     },
+  { id: 'TEAM08', pass: 'vine!2245', name: 'Team Will '   },
+  { id: 'TEAM09', pass: 'will@7753', name: 'Team Robin '    },
+  { id: 'TEAM10', pass: 'elev#3381', name: 'Team Jonathan '   },
+  { id: 'TEAM11', pass: 'snow$9922', name: 'Team Max '   },
+  { id: 'TEAM12', pass: 'creel%4490', name: 'Team Nancy '   },
+  { id: 'TEAM13', pass: 'mike&8822', name: 'Team Steve '   },
+  { id: 'TEAM14', pass: 'bren*6617', name: 'Team Billy '   },
+  { id: 'TEAM15', pass: 'vecna!2245', name: 'Team Murray  '   },
+  { id: 'TEAM16', pass: 'hopper@7753', name: 'Team Erica '   },
+  { id: 'TEAM17', pass: 'will#3381', name: 'Team Suzie '   },
+  { id: 'TEAM18', pass: 'robin$9922', name: 'Team Alex '   },
+  { id: 'TEAM19', pass: 'jonathan%4490', name: 'Team Dr. Owens '   },
+  { id: 'TEAM20', pass: 'max&8822', name: 'Team Dr. Brenner '   },
+  { id: 'TEAM21', pass: 'nancy*6617', name: 'Team Dr. Alexei '   },
 ];
 
 // teamId -> { id, name, submitted, answers, startedAt, usedSeconds,
@@ -91,25 +102,47 @@ app.post('/api/team/login', (req, res) => {
 
   const sessionToken = uuidv4();
   if (!state) {
-    // Fresh start — randomise question order within each section
-    const easyIdx  = shuffleArray([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]);
-    const medIdx   = shuffleArray([15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44]);
-    const hardIdx  = shuffleArray([45,46,47,48,49,50,51,52,53,54,55,56,57,58,59]);
-    const questionOrder = [...easyIdx, ...medIdx, ...hardIdx];
-    state = {
-      id, name: cred.name, members: members || '',
-      submitted: false, startedAt: Date.now(),
-      answers: new Array(60).fill(null), flags: new Array(60).fill(false),
-      totalSeconds: 38 * 60, usedSeconds: 0,
-      questionOrder, tabSwitchCount: 0, sessionToken, lastActive: Date.now()
-    };
-    teamState.set(id, state);
-    broadcastToAdmins({ type: 'TEAM_JOINED', team: getPublicState(state) });
-  } else {
-    state.sessionToken = sessionToken;
-    state.lastActive = Date.now();
-    if (members) state.members = members;
-  }
+  // Generate ranges automatically
+  const easyIdx = shuffleArray(
+    Array.from({ length: 15 }, (_, i) => i)
+  );
+
+  const medIdx = shuffleArray(
+    Array.from({ length: 30 }, (_, i) => i + 15)
+  );
+
+  const hardIdx = shuffleArray(
+    Array.from({ length: 15 }, (_, i) => i + 45)
+  );
+
+  const questionOrder = [...easyIdx, ...medIdx, ...hardIdx];
+
+  state = {
+    id,
+    name: cred.name,
+    members: members || '',
+    submitted: false,
+    startedAt: Date.now(),
+    answers: new Array(60).fill(null),
+    flags: new Array(60).fill(false),
+    totalSeconds: 38 * 60,
+    usedSeconds: 0,
+    questionOrder,
+    tabSwitchCount: 0,
+    sessionToken,
+    lastActive: Date.now()
+  };
+
+  teamState.set(id, state);
+  broadcastToAdmins({
+    type: 'TEAM_JOINED',
+    team: getPublicState(state)
+  });
+} else {
+  state.sessionToken = sessionToken;
+  state.lastActive = Date.now();
+  if (members) state.members = members;
+}
 
   res.json({
     sessionToken,
@@ -351,6 +384,140 @@ function getAllQuestions() {
   {id:59,section:'hard',cat:'Advanced Design Systems',text:'What is "design debt" and why is it a problem?',opts:['Unpaid design tool subscriptions','The accumulation of inconsistencies, workarounds, and outdated patterns in a product that slow future design and development work','Having too many designers on a project','The cost of redesigning a product from scratch'],ans:1},
   {id:60,section:'hard',cat:'Advanced Design Systems',text:'In a large design system, what is a "governance model" responsible for?',opts:['Approving all UI designs before they go to development','Defining how the design system is maintained, updated, and how contributions are reviewed and approved across teams','Automatically checking designs against brand guidelines','Generating component documentation from Figma files'],ans:1},
   ];
+
+  // Easier thingssss
+  /* return [
+    {id:1,section:'easy',cat:'UI Basics',text:'What does UI stand for?',opts:['User Interface','User Internet','Universal Interface','User Integration'],ans:0},
+    {id:2,section:'easy',cat:'UX Basics',text:'What does UX stand for?',opts:['User Experience','User Extension','Universal Experience','User Execution'],ans:0},
+    {id:3,section:'easy',cat:'UI Basics',text:'Which tool is commonly used for UI/UX design?',opts:['Figma','Excel','Word','Notepad'],ans:0},
+    {id:4,section:'easy',cat:'UI Basics',text:'What is a button mainly used for?',opts:['Decoration','Perform an action','Store data','Play music'],ans:1},
+    {id:5,section:'easy',cat:'UX Basics',text:'Who is the most important person in user-centered design?',opts:['Developer','Manager','User','Tester'],ans:2},
+    {id:6,section:'easy',cat:'Visual Design',text:'Which color is commonly used for success messages?',opts:['Red','Green','Black','Purple'],ans:1},
+    {id:7,section:'easy',cat:'Visual Design',text:'What is white space used for?',opts:['Saving memory','Improving readability','Adding advertisements','Increasing speed'],ans:1},
+    {id:8,section:'easy',cat:'Navigation',text:'What helps users move between pages?',opts:['Navigation menu','Database','Animation','Server'],ans:0},
+    {id:9,section:'easy',cat:'Typography',text:'What is typography?',opts:['Designing text','Coding','Testing','Animation'],ans:0},
+    {id:10,section:'easy',cat:'Typography',text:'Why is readable text important?',opts:['Looks bigger','Helps users understand content','Saves storage','Improves internet speed'],ans:1},
+    {id:11,section:'easy',cat:'Visual Design',text:'Which color model is used on screens?',opts:['RGB','CMYK','Pantone','HEX'],ans:0},
+    {id:12,section:'easy',cat:'UX Basics',text:'What is a persona?',opts:['A fictional user profile','A logo','A wireframe','A font'],ans:0},
+    {id:13,section:'easy',cat:'Wireframing',text:'What is a wireframe?',opts:['Basic layout design','Final coded app','Database schema','Animation'],ans:0},
+    {id:14,section:'easy',cat:'Testing',text:'What is user testing?',opts:['Testing with real users','Testing servers','Testing internet','Testing colors'],ans:0},
+    {id:15,section:'easy',cat:'Accessibility',text:'What helps screen readers describe images?',opts:['Alt Text','CSS','Icons','Videos'],ans:0},
+    {id:16,section:'easy',cat:'Mobile UX',text:'Which device commonly uses tap and swipe gestures?',opts:['Desktop','Printer','Mobile Phone','Server'],ans:2},
+    {id:17,section:'easy',cat:'Navigation',text:'Which icon is often used for menus?',opts:['Star','Bell','Hamburger Icon','Heart'],ans:2},
+    {id:18,section:'easy',cat:'Prototyping',text:'What is a prototype?',opts:['Test version of a design','Final product','Database','Source code'],ans:0},
+    {id:19,section:'easy',cat:'Accessibility',text:'Why should buttons be large enough?',opts:['For decoration','Easy tapping','Save memory','Reduce coding'],ans:1},
+    {id:20,section:'easy',cat:'UX Basics',text:'Why is feedback important?',opts:['Improves design','Adds bugs','Increases storage','Reduces testing'],ans:0},
+
+    {id:21,section:'medium',cat:'Navigation',text:'What is a sitemap?',opts:['Website structure diagram','Map location','Database model','Color palette'],ans:0},
+    {id:22,section:'medium',cat:'Research',text:'What is a survey used for?',opts:['Collect user opinions','Write code','Create icons','Store files'],ans:0},
+    {id:23,section:'medium',cat:'Research',text:'What is an interview in UX?',opts:['Talking to users','Writing code','Testing servers','Making logos'],ans:0},
+    {id:24,section:'medium',cat:'Design Process',text:'What is brainstorming used for?',opts:['Generating ideas','Coding','Testing','Debugging'],ans:0},
+    {id:25,section:'medium',cat:'Navigation',text:'What is breadcrumb navigation?',opts:['Shows location in site','Downloads files','Stores cookies','Creates menus'],ans:0},
+    {id:26,section:'medium',cat:'Testing',text:'What is A/B testing?',opts:['Comparing two versions','Testing browsers','Testing APIs','Testing databases'],ans:0},
+    {id:27,section:'medium',cat:'Wireframing',text:'Low-fidelity wireframes are used for?',opts:['Quick layout ideas','Final design','Coding','Marketing'],ans:0},
+    {id:28,section:'medium',cat:'Prototyping',text:'A prototype allows users to?',opts:['Interact with design','Deploy app','Write code','Store data'],ans:0},
+    {id:29,section:'medium',cat:'Accessibility',text:'High color contrast improves?',opts:['Accessibility','Storage','Performance','Coding'],ans:0},
+    {id:30,section:'medium',cat:'Mobile UX',text:'Bottom navigation is common in?',opts:['Mobile apps','Databases','Servers','Printers'],ans:0},
+    {id:31,section:'medium',cat:'Visual Design',text:'Visual hierarchy helps users?',opts:['Know what to notice first','Write code','Store files','Reduce memory'],ans:0},
+    {id:32,section:'medium',cat:'Research',text:'What is a user journey?',opts:['Steps user takes','Travel plan','Code structure','Design system'],ans:0},
+    {id:33,section:'medium',cat:'UI Components',text:'A checkbox is used for?',opts:['Multiple selections','Single selection','Animation','Navigation'],ans:0},
+    {id:34,section:'medium',cat:'UI Components',text:'A radio button is used for?',opts:['Single selection','Multiple selections','Animation','Testing'],ans:0},
+    {id:35,section:'medium',cat:'Accessibility',text:'Can color alone convey information?',opts:['No','Yes','Always','Only on mobile'],ans:0},
+    {id:36,section:'medium',cat:'Research',text:'Think-aloud testing asks users to?',opts:['Speak thoughts while using product','Stay silent','Write code','Draw sketches'],ans:0},
+    {id:37,section:'medium',cat:'Design Systems',text:'A design system helps maintain?',opts:['Consistency','Storage','Servers','SEO'],ans:0},
+    {id:38,section:'medium',cat:'UI Components',text:'A search bar is an example of?',opts:['UI component','Database','Animation','Server'],ans:0},
+    {id:39,section:'medium',cat:'Accessibility',text:'Keyboard accessibility means?',opts:['Use site without mouse','Type faster','Use shortcuts only','Better coding'],ans:0},
+    {id:40,section:'medium',cat:'Visual Design',text:'What is alignment?',opts:['Organizing elements neatly','Color selection','Testing','Coding'],ans:0},
+    {id:41,section:'medium',cat:'Visual Design',text:'What is consistency in design?',opts:['Using similar patterns','Changing layouts often','Using many colors','Removing navigation'],ans:0},
+    {id:42,section:'medium',cat:'Research',text:'What is the goal of UX research?',opts:['Understand users','Write code','Design logos','Build servers'],ans:0},
+    {id:43,section:'medium',cat:'Prototyping',text:'Paper prototypes are useful because they are?',opts:['Fast and cheap','Expensive','Final products','Automated'],ans:0},
+    {id:44,section:'medium',cat:'UI Components',text:'What is a dropdown used for?',opts:['Selecting options','Showing videos','Playing music','Saving files'],ans:0},
+    {id:45,section:'medium',cat:'Mobile UX',text:'Why should touch targets be large?',opts:['Easy tapping','Better coding','Save memory','Increase storage'],ans:0},
+
+    {id:46,section:'hard',cat:'UX',text:'A user cannot find the checkout button. What is the issue?',opts:['Poor discoverability','Good usability','Accessibility success','Performance issue'],ans:0},
+    {id:47,section:'hard',cat:'UX',text:'What should happen after a user clicks a button?',opts:['Feedback should appear','Nothing','App closes','Screen freezes'],ans:0},
+    {id:48,section:'hard',cat:'Research',text:'Why observe users instead of only asking them?',opts:['Actions may differ from words','Observation is cheaper','Users dislike surveys','It is faster'],ans:0},
+    {id:49,section:'hard',cat:'Accessibility',text:'Which design is more accessible?',opts:['High contrast text','Light gray text on white','Tiny text','Flashing text'],ans:0},
+    {id:50,section:'hard',cat:'UX',text:'Which design usually provides better usability?',opts:['Simple and clear','Complex and crowded','Hidden navigation','Tiny buttons'],ans:0},
+    {id:51,section:'hard',cat:'Testing',text:'What is the best way to improve a design?',opts:['Test with users','Add colors','Add animations','Add pages'],ans:0},
+    {id:52,section:'hard',cat:'Navigation',text:'Users should be able to know where they are in an app. This relates to?',opts:['Navigation','Animation','Typography','Coding'],ans:0},
+    {id:53,section:'hard',cat:'Design Systems',text:'Why use reusable components?',opts:['Consistency and speed','More storage','More bugs','Less testing'],ans:0},
+    {id:54,section:'hard',cat:'Accessibility',text:'Which user group benefits from accessibility improvements?',opts:['Everyone','Only disabled users','Only elderly users','Only developers'],ans:0},
+    {id:55,section:'hard',cat:'Research',text:'What does task success rate measure?',opts:['Users completing tasks correctly','Download speed','Loading time','Page views'],ans:0},
+    {id:56,section:'hard',cat:'UX',text:'What is the main purpose of UX design?',opts:['Create useful and satisfying experiences','Write code','Manage servers','Increase storage'],ans:0},
+    {id:57,section:'hard',cat:'Visual Design',text:'Too many colors can make a design?',opts:['Confusing','Faster','Accessible','Professional'],ans:0},
+    {id:58,section:'hard',cat:'Mobile UX',text:'Why is responsive design important?',opts:['Works on different screen sizes','Adds animations','Improves coding','Stores data'],ans:0},
+    {id:59,section:'hard',cat:'Research',text:'Which provides direct user feedback?',opts:['Usability testing','Server logs','CSS','Database'],ans:0},
+    {id:60,section:'hard',cat:'Design Systems',text:'What is the benefit of a single design standard?',opts:['Consistent user experience','More colors','More pages','More storage'],ans:0},
+
+  ]; */
+
+  // MCA worthy
+
+  /*return [
+      {id:1,section:'easy',cat:'UX Fundamentals',text:'What does UX stand for?',opts:['User Experience','User Extension','Universal Experience','User Execution'],ans:0},
+      {id:2,section:'easy',cat:'UI Fundamentals',text:'What does UI stand for?',opts:['User Interface','User Internet','Unified Interface','User Interaction'],ans:0},
+      {id:3,section:'easy',cat:'UX Fundamentals',text:'Which statement best describes UX design?',opts:['Making products useful and easy to use','Writing backend code','Creating databases','Managing servers'],ans:0},
+      {id:4,section:'easy',cat:'UI Fundamentals',text:'Which tool is commonly used for UI/UX design?',opts:['Figma','Excel','PowerPoint','MySQL'],ans:0},
+      {id:5,section:'easy',cat:'Wireframing',text:'What is a wireframe?',opts:['A basic layout showing structure','A final coded product','A database design','An animation'],ans:0},
+      {id:6,section:'easy',cat:'Research',text:'What is a persona?',opts:['A fictional representation of a target user','A website template','A logo design','A navigation menu'],ans:0},
+      {id:7,section:'easy',cat:'Visual Design',text:'Why is white space important?',opts:['Improves readability','Reduces internet usage','Stores data','Improves coding'],ans:0},
+      {id:8,section:'easy',cat:'Typography',text:'What is typography concerned with?',opts:['Text and readability','Databases','Testing','Networking'],ans:0},
+      {id:9,section:'easy',cat:'Color Theory',text:'Which color model is used on digital screens?',opts:['RGB','CMYK','Pantone','RAL'],ans:0},
+      {id:10,section:'easy',cat:'Testing',text:'What is usability testing?',opts:['Observing users performing tasks','Testing internet speed','Checking source code','Database optimization'],ans:0},
+      {id:11,section:'easy',cat:'Accessibility',text:'What does alt text do?',opts:['Describes images for screen readers','Improves page speed','Changes image size','Adds animations'],ans:0},
+      {id:12,section:'easy',cat:'Navigation',text:'What is the purpose of navigation?',opts:['Help users move through content','Increase loading speed','Store data','Improve SEO'],ans:0},
+      {id:13,section:'easy',cat:'Prototyping',text:'What is a prototype?',opts:['Interactive representation of a design','Final application','Database schema','Source code'],ans:0},
+      {id:14,section:'easy',cat:'Mobile UX',text:'Why should buttons be large enough on mobile?',opts:['Easy touch interaction','Better graphics','Less memory usage','Faster downloads'],ans:0},
+      {id:15,section:'easy',cat:'Design Process',text:'What does MVP stand for?',opts:['Minimum Viable Product','Most Valuable Product','Maximum Visual Prototype','Minimum Visual Process'],ans:0},
+  
+      {id:16,section:'medium',cat:'Research',text:'Why do designers conduct user interviews?',opts:['Understand user needs and problems','Improve coding skills','Test servers','Manage databases'],ans:0},
+      {id:17,section:'medium',cat:'Research',text:'What is the purpose of a survey?',opts:['Collect user feedback at scale','Create wireframes','Build APIs','Manage projects'],ans:0},
+      {id:18,section:'medium',cat:'Research',text:'What is a user journey map?',opts:['Visualization of user steps and experiences','Website structure diagram','Database model','Network architecture'],ans:0},
+      {id:19,section:'medium',cat:'Navigation',text:'What is a sitemap?',opts:['Diagram showing page hierarchy','Physical location map','Color palette','Component library'],ans:0},
+      {id:20,section:'medium',cat:'Navigation',text:'What do breadcrumbs help users understand?',opts:['Their location in a website','Loading progress','Color hierarchy','Font styles'],ans:0},
+      {id:21,section:'medium',cat:'Interaction Design',text:'What is feedback in UI design?',opts:['System response to user actions','A database query','An animation effect','Coding standard'],ans:0},
+      {id:22,section:'medium',cat:'Interaction Design',text:'Why should forms provide validation messages?',opts:['Help users correct mistakes','Improve graphics','Reduce storage','Speed up servers'],ans:0},
+      {id:23,section:'medium',cat:'Testing',text:'What is A/B testing?',opts:['Comparing two versions of a design','Testing browsers','Testing APIs','Comparing databases'],ans:0},
+      {id:24,section:'medium',cat:'Wireframing',text:'Low-fidelity wireframes are mainly used for?',opts:['Exploring layout ideas quickly','Developer handoff','Marketing presentations','Final approval'],ans:0},
+      {id:25,section:'medium',cat:'Prototyping',text:'How does a prototype differ from a wireframe?',opts:['Prototype allows interaction','Prototype uses databases','Wireframe uses code','No difference'],ans:0},
+      {id:26,section:'medium',cat:'Accessibility',text:'Why is color alone not enough to communicate information?',opts:['Some users cannot distinguish colors','Colors increase loading time','Colors affect SEO','Colors reduce usability'],ans:0},
+      {id:27,section:'medium',cat:'Accessibility',text:'What is keyboard accessibility?',opts:['Using a website without a mouse','Typing faster','Using shortcuts only','Programming accessibility'],ans:0},
+      {id:28,section:'medium',cat:'Visual Design',text:'What is visual hierarchy?',opts:['Order users notice elements','Team hierarchy','Database structure','Coding priority'],ans:0},
+      {id:29,section:'medium',cat:'Visual Design',text:'What does alignment improve?',opts:['Organization and readability','Internet speed','Storage capacity','SEO'],ans:0},
+      {id:30,section:'medium',cat:'Visual Design',text:'Consistency in design helps users by?',opts:['Reducing learning effort','Increasing animations','Reducing colors','Improving storage'],ans:0},
+      {id:31,section:'medium',cat:'Information Architecture',text:'Card sorting is used to?',opts:['Organize content structure','Create animations','Design logos','Write code'],ans:0},
+      {id:32,section:'medium',cat:'Information Architecture',text:'What is information architecture concerned with?',opts:['Organizing content effectively','Database design','Server management','Graphics rendering'],ans:0},
+      {id:33,section:'medium',cat:'Mobile UX',text:'Why is responsive design important?',opts:['Works across different screen sizes','Improves networking','Reduces storage','Creates databases'],ans:0},
+      {id:34,section:'medium',cat:'Mobile UX',text:'Bottom navigation is commonly used because?',opts:['Easy thumb access','Better performance','Lower memory use','Faster coding'],ans:0},
+      {id:35,section:'medium',cat:'Research',text:'What is the think-aloud method?',opts:['Users explain thoughts while performing tasks','Reading instructions aloud','Group discussions','Survey analysis'],ans:0},
+      {id:36,section:'medium',cat:'Design Thinking',text:'Which phase focuses on understanding users?',opts:['Empathize','Prototype','Test','Implement'],ans:0},
+      {id:37,section:'medium',cat:'Design Thinking',text:'Which phase generates solution ideas?',opts:['Ideate','Define','Empathize','Evaluate'],ans:0},
+      {id:38,section:'medium',cat:'Design Systems',text:'What is the purpose of a design system?',opts:['Maintain consistency across products','Replace developers','Generate code automatically','Improve hosting'],ans:0},
+      {id:39,section:'medium',cat:'Design Systems',text:'What is a reusable component?',opts:['UI element used in multiple places','Database table','Network module','API endpoint'],ans:0},
+      {id:40,section:'medium',cat:'Accessibility',text:'What does WCAG stand for?',opts:['Web Content Accessibility Guidelines','Web Coding Access Guide','World Content Accessibility Group','Web Communication Access Guidelines'],ans:0},
+      {id:41,section:'medium',cat:'Testing',text:'What is task success rate?',opts:['Percentage of users completing a task correctly','Page loading speed','Error count','User satisfaction score'],ans:0},
+      {id:42,section:'medium',cat:'Research',text:'Qualitative research helps understand?',opts:['Why users behave a certain way','Server usage','Code quality','Traffic volume'],ans:0},
+      {id:43,section:'medium',cat:'Research',text:'Quantitative research helps measure?',opts:['Numbers and trends','Emotions only','Visual quality','Code complexity'],ans:0},
+      {id:44,section:'medium',cat:'UI Components',text:'What is the purpose of a dropdown menu?',opts:['Allow selection from multiple options','Display images','Play videos','Store information'],ans:0},
+      {id:45,section:'medium',cat:'UX Evaluation',text:'What is the primary goal of usability evaluation?',opts:['Identify user difficulties','Improve server speed','Reduce storage','Create animations'],ans:0},
+     
+      {id:46,section:'hard',cat:'UX Research',text:'Analytics show users abandon registration at Step 3. What should the team do first?',opts:['Investigate user behavior through testing or interviews','Redesign the homepage','Add more features','Change brand colors'],ans:0},
+      {id:47,section:'hard',cat:'Interaction Design',text:'Users repeatedly click a disabled button. What is the best design improvement?',opts:['Explain why it is disabled','Remove the button','Make it smaller','Hide the form'],ans:0},
+      {id:48,section:'hard',cat:'Accessibility',text:'Which solution best improves accessibility for error messages?',opts:['Use both color and text descriptions','Use red color only','Use animations only','Use smaller text'],ans:0},
+      {id:49,section:'hard',cat:'Research',text:'Why should designers observe users instead of relying only on surveys?',opts:['Users may behave differently than they report','Surveys are always inaccurate','Observation is faster','Observation is cheaper'],ans:0},
+      {id:50,section:'hard',cat:'Information Architecture',text:'Users cannot predict where content is located. Which area needs improvement?',opts:['Information Architecture','Typography','Animation','Branding'],ans:0},
+      {id:51,section:'hard',cat:'Testing',text:'Five out of six users fail the same task. What does this most likely indicate?',opts:['A usability issue in the design','User incompetence','Network failure','Incorrect analytics'],ans:0},
+      {id:52,section:'hard',cat:'Design Systems',text:'Why are reusable components valuable?',opts:['Reduce inconsistency and development effort','Increase complexity','Reduce accessibility','Replace testing'],ans:0},
+      {id:53,section:'hard',cat:'Mobile UX',text:'Why should primary actions be placed within thumb reach?',opts:['Improve ease of use on mobile','Reduce battery usage','Improve graphics','Reduce storage'],ans:0},
+      {id:54,section:'hard',cat:'Accessibility',text:'Which design is most accessible?',opts:['High contrast text with keyboard support','Low contrast text','Text-only icons','Tiny touch targets'],ans:0},
+      {id:55,section:'hard',cat:'UX Metrics',text:'Users complete tasks quickly but often fail. Which metric deserves attention?',opts:['Task success rate','Loading time','Session duration','Page views'],ans:0},
+      {id:56,section:'hard',cat:'Design Thinking',text:'What is the main benefit of prototyping before development?',opts:['Identify problems early and reduce rework','Improve server performance','Reduce hosting costs','Replace research'],ans:0},
+      {id:57,section:'hard',cat:'UX Strategy',text:'A feature is rarely used. What should be done first?',opts:['Understand why users avoid it','Remove it immediately','Redesign the logo','Change colors'],ans:0},
+      {id:58,section:'hard',cat:'Research',text:'Which method best reveals why users abandon a checkout process?',opts:['User interviews','Logo testing','Typography review','Color analysis'],ans:0},
+      {id:59,section:'hard',cat:'Accessibility',text:'Why is inclusive design important?',opts:['Products work for a wider range of users','Reduces development cost only','Improves animations','Eliminates testing'],ans:0},
+      {id:60,section:'hard',cat:'UX Evaluation',text:'What ultimately indicates successful UX?',opts:['Users achieve goals efficiently and satisfactorily','More colors','More animations','Longer sessions'],ans:0},
+    ];*/
 }
 
 app.get('/api/questions', (req, res) => {
