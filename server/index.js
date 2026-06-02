@@ -165,9 +165,17 @@ app.post('/api/admin/login', (req, res) => {
   }
 });
 
+// Home Page / landing page
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public', 'home.html'));
+});
+
 // ──────────────────────────────
 //  QUIZ STATE ROUTES
 // ──────────────────────────────
+
+
+
 function authTeam(req, res) {
   const { teamId, sessionToken } = req.body;
   const id = (teamId || '').toUpperCase();

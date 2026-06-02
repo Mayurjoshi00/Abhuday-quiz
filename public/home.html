@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hawkins Lab — Quiz Night</title>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #030308;
+  --surface: #07070f;
+  --card: #0b0b18;
+  --border: #18183a;
+  --red: #cc1111;
+  --red-glow: rgba(204,17,17,0.35);
+  --red-dim: rgba(204,17,17,0.12);
+  --amber: #d4780a;
+  --amber-glow: rgba(212,120,10,0.3);
+  --amber-dim: rgba(212,120,10,0.12);
+  --green: #1a9e3a;
+  --green-glow: rgba(26,158,58,0.3);
+  --green-dim: rgba(26,158,58,0.12);
+  --purple: #8833bb;
+  --text: #e0d8c8;
+  --text-dim: #7a7060;
+  --white: #f5f0e8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Courier Prime', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Ambient background glow */
+body::before {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse 70% 40% at 50% 0%, rgba(100,0,0,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 30% at 10% 90%, rgba(60,0,80,0.08) 0%, transparent 50%);
+}
+
+/* Film grain noise */
+body::after {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  background-size: 200px;
+  opacity: 0.5;
+}
+
+/* ─────────────────────────────────────────
+   Christmas Lights Strip
+───────────────────────────────────────── */
+.lights-strip {
+  position: fixed; top: 0; left: 0; right: 0; height: 36px;
+  display: flex; align-items: center; padding: 0 8px; gap: 0;
+  z-index: 100; overflow: hidden;
+  background: linear-gradient(90deg, rgba(5,0,5,0.95), rgba(3,0,8,0.95));
+  border-bottom: 1px solid rgba(80,0,0,0.3);
+}
+.light-bulb {
+  width: 10px; height: 14px; border-radius: 50% 50% 40% 40%;
+  flex-shrink: 0; position: relative; margin: 0 4px;
+  box-shadow: 0 0 6px currentColor, 0 0 12px currentColor;
+  animation: flicker 8s ease-in-out infinite;
+}
+.light-bulb::before {
+  content: ''; position: absolute; top: -5px; left: 50%;
+  transform: translateX(-50%); width: 2px; height: 6px;
+  background: #333; border-radius: 1px;
+}
+.light-bulb::after {
+  content: ''; position: absolute; inset: -6px; border-radius: 50%;
+  background: currentColor; opacity: 0.15; filter: blur(4px);
+}
+.lb-red    { color: #ff2020; background: #ff2020; }
+.lb-amber  { color: #ff9500; background: #ff9500; }
+.lb-green  { color: #20ff40; background: #20ff40; }
+.lb-blue   { color: #2060ff; background: #2060ff; }
+.lb-yellow { color: #ffee00; background: #ffee00; }
+.lb-purple { color: #cc20ff; background: #cc20ff; }
+.lb-white  { color: #ffffff; background: #ffffff; }
+@keyframes flicker {
+  0%,100% { opacity: 1; }
+  2%       { opacity: 0.3; }
+  4%       { opacity: 1; }
+  20%      { opacity: 1; }
+  22%      { opacity: 0.5; }
+  24%      { opacity: 1; }
+  50%      { opacity: 1; }
+  52%      { opacity: 0.2; }
+  54%      { opacity: 1; }
+  80%      { opacity: 0.8; }
+}
+
+/* ─────────────────────────────────────────
+   Nav Bar
+───────────────────────────────────────── */
+.nav {
+  position: fixed; top: 36px; left: 0; right: 0;
+  z-index: 50;
+  background: rgba(4,2,4,0.92);
+  border-bottom: 1px solid rgba(60,20,20,0.25);
+  backdrop-filter: blur(12px);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 40px; height: 56px;
+}
+.nav-logo {
+  font-family: 'Special Elite', serif;
+  font-size: 14px; letter-spacing: .2em; text-transform: uppercase;
+}
+.nav-logo span { color: var(--red); text-shadow: 0 0 10px var(--red-glow); }
+.nav-links { display: flex; gap: 24px; align-items: center; }
+.nav-link {
+  font-family: 'Special Elite', serif;
+  font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--text-dim); text-decoration: none;
+  transition: color .2s;
+}
+.nav-link:hover { color: var(--red); }
+.nav-link.active { color: var(--text); }
+.nav-admin-btn {
+  font-family: 'Special Elite', serif;
+  font-size: 10px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--text-dim);
+  background: rgba(20,10,10,0.8);
+  border: 1px solid rgba(80,40,40,0.3);
+  padding: 7px 16px; text-decoration: none;
+  transition: all .2s;
+}
+.nav-admin-btn:hover {
+  border-color: var(--red); color: var(--red);
+  box-shadow: 0 0 12px var(--red-dim);
+}
+
+/* ─────────────────────────────────────────
+   Hero Section
+───────────────────────────────────────── */
+.hero {
+  position: relative; z-index: 1;
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 140px 24px 80px;
+  text-align: center;
+}
+.hero::before {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 40%, rgba(130,0,0,0.1) 0%, transparent 70%),
+    radial-gradient(ellipse 30% 20% at 15% 70%, rgba(80,0,100,0.07) 0%, transparent 60%);
+}
+@keyframes scanMove {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+.scanline {
+  position: absolute; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(204,17,17,0.05), transparent);
+  pointer-events: none; z-index: 2;
+  animation: scanMove 8s linear infinite;
+}
+
+.hero-eyebrow {
+  font-family: 'Special Elite', serif;
+  font-size: 11px; letter-spacing: .35em; text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 28px;
+  position: relative; z-index: 3;
+}
+
+.hero-title {
+  font-family: 'Special Elite', serif;
+  font-size: clamp(60px, 12vw, 108px);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 0.9;
+  color: var(--red);
+  text-shadow: 0 0 30px var(--red-glow), 0 0 80px rgba(204,17,17,0.1);
+  animation: titleGlow 3s ease-in-out infinite alternate;
+  margin-bottom: 10px;
+  position: relative; z-index: 3;
+}
+.hero-sub {
+  font-family: 'Special Elite', serif;
+  font-size: clamp(18px, 3.5vw, 30px);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--amber);
+  text-shadow: 0 0 20px var(--amber-glow);
+  margin-bottom: 36px;
+  position: relative; z-index: 3;
+}
+@keyframes titleGlow {
+  from { text-shadow: 0 0 20px var(--red-glow), 0 0 60px rgba(204,17,17,0.1); }
+  to   { text-shadow: 0 0 40px var(--red-glow), 0 0 100px rgba(204,17,17,0.22), 0 0 160px rgba(204,17,17,0.06); }
+}
+
+.hero-divider {
+  width: 200px; height: 1px; margin: 0 auto 36px;
+  background: linear-gradient(90deg, transparent, rgba(204,17,17,0.45), transparent);
+  position: relative; z-index: 3;
+}
+
+.hero-desc {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 15px; font-style: italic;
+  color: var(--text-dim);
+  max-width: 500px; line-height: 1.85;
+  margin-bottom: 48px;
+  position: relative; z-index: 3;
+}
+
+/* Quiz meta badges */
+.quiz-meta {
+  display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+  margin-bottom: 52px; position: relative; z-index: 3;
+}
+.meta-badge {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(12,5,5,0.9);
+  border: 1px solid rgba(80,30,30,0.3);
+  padding: 10px 20px;
+  font-family: 'Special Elite', serif;
+  font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+  transition: all .2s;
+}
+.meta-badge:hover { border-color: rgba(140,40,40,0.5); }
+.meta-val { color: var(--red); font-size: 16px; margin-right: 2px; }
+.meta-label { color: var(--text-dim); }
+.meta-badge.live-badge { border-color: rgba(26,158,58,0.3); }
+.meta-badge.live-badge .meta-label { color: var(--green); }
+
+/* Live dot */
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.5)} }
+.live-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 8px var(--green-glow);
+  animation: pulse 1.5s ease infinite; display: inline-block;
+}
+
+/* CTA buttons */
+.cta-group {
+  display: flex; flex-wrap: wrap; gap: 14px; justify-content: center;
+  position: relative; z-index: 3; margin-bottom: 80px;
+}
+.cta-btn {
+  font-family: 'Special Elite', serif;
+  font-size: 13px; letter-spacing: .2em; text-transform: uppercase;
+  padding: 16px 40px; cursor: pointer; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 10px;
+  transition: all .25s;
+}
+.cta-primary {
+  background: var(--red); color: #fff;
+  box-shadow: 0 0 30px var(--red-dim);
+  border: none;
+}
+.cta-primary:hover { box-shadow: 0 0 60px var(--red-glow); transform: translateY(-3px); }
+.cta-secondary {
+  background: transparent; color: var(--text);
+  border: 1px solid rgba(120,60,60,0.4);
+}
+.cta-secondary:hover { border-color: var(--red); color: var(--red); box-shadow: 0 0 20px var(--red-dim); transform: translateY(-3px); }
+
+/* Section eyebrow label */
+.section-eyebrow {
+  font-family: 'Special Elite', serif;
+  font-size: 10px; letter-spacing: .3em; text-transform: uppercase;
+  color: var(--text-dim);
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 28px; position: relative; z-index: 3;
+  width: 100%; max-width: 860px;
+}
+.section-eyebrow::before,
+.section-eyebrow::after {
+  content: ''; flex: 1; height: 1px;
+  background: rgba(80,30,30,0.3);
+}
+
+/* Feature cards */
+.features {
+  display: flex; flex-wrap: wrap; gap: 14px; justify-content: center;
+  max-width: 860px; width: 100%;
+  position: relative; z-index: 3;
+}
+.feat-card {
+  background: rgba(10,5,5,0.85);
+  border: 1px solid rgba(80,30,30,0.22);
+  padding: 26px 28px;
+  flex: 1; min-width: 185px; max-width: 230px;
+  position: relative; overflow: hidden;
+  transition: all .25s;
+}
+.feat-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+}
+.fc-red::before    { background: var(--red);    box-shadow: 0 0 8px var(--red-glow);   }
+.fc-amber::before  { background: var(--amber);  box-shadow: 0 0 8px var(--amber-glow); }
+.fc-green::before  { background: var(--green);  box-shadow: 0 0 8px var(--green-glow); }
+.fc-purple::before { background: var(--purple); }
+.feat-card:hover { transform: translateY(-4px); border-color: rgba(140,40,40,0.4); }
+.feat-icon  { font-size: 28px; margin-bottom: 14px; }
+.feat-title {
+  font-family: 'Special Elite', serif; font-size: 13px;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--white); margin-bottom: 8px;
+}
+.feat-desc { font-size: 12px; color: var(--text-dim); line-height: 1.65; }
+
+/* ─────────────────────────────────────────
+   How It Works Section
+───────────────────────────────────────── */
+.how-section {
+  position: relative; z-index: 1;
+  padding: 80px 40px;
+  border-top: 1px solid rgba(60,20,20,0.2);
+  text-align: center;
+}
+.how-title {
+  font-family: 'Special Elite', serif;
+  font-size: 28px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--white); margin-bottom: 12px;
+}
+.how-sub {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 14px; font-style: italic; color: var(--text-dim);
+  margin-bottom: 52px; line-height: 1.7;
+}
+.steps {
+  display: flex; flex-wrap: wrap; gap: 0;
+  justify-content: center; max-width: 900px; margin: 0 auto;
+  position: relative;
+}
+.step {
+  flex: 1; min-width: 180px; max-width: 220px;
+  padding: 28px 20px; text-align: center;
+  position: relative;
+}
+.step-num {
+  font-family: 'Special Elite', serif;
+  font-size: 40px; color: rgba(204,17,17,0.18);
+  line-height: 1; margin-bottom: 16px;
+  letter-spacing: .05em;
+}
+.step-icon { font-size: 28px; margin-bottom: 14px; }
+.step-title {
+  font-family: 'Special Elite', serif;
+  font-size: 13px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--white); margin-bottom: 8px;
+}
+.step-desc { font-size: 12px; color: var(--text-dim); line-height: 1.65; }
+.step + .step::before {
+  content: '▸';
+  position: absolute; left: -10px; top: 50%;
+  transform: translateY(-50%);
+  color: rgba(204,17,17,0.3); font-size: 16px;
+}
+
+/* ─────────────────────────────────────────
+   Scoreboard Preview Section
+───────────────────────────────────────── */
+.preview-section {
+  position: relative; z-index: 1;
+  padding: 80px 40px;
+  border-top: 1px solid rgba(60,20,20,0.2);
+  text-align: center;
+}
+.section-heading {
+  font-family: 'Special Elite', serif;
+  font-size: 28px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--white); margin-bottom: 12px;
+}
+.section-subheading {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 14px; font-style: italic;
+  color: var(--text-dim); margin-bottom: 48px; line-height: 1.7;
+}
+.preview-card {
+  max-width: 700px; margin: 0 auto;
+  background: rgba(8,3,3,0.9);
+  border: 1px solid rgba(80,30,30,0.25);
+  overflow: hidden;
+}
+.preview-header {
+  background: rgba(0,0,0,0.3);
+  border-bottom: 1px solid rgba(60,20,20,0.25);
+  padding: 14px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.preview-header-title {
+  font-family: 'Special Elite', serif;
+  font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--red);
+}
+.preview-header-live {
+  display: flex; align-items: center; gap: 7px;
+  font-family: 'Special Elite', serif;
+  font-size: 10px; letter-spacing: .12em; color: var(--green);
+}
+.mock-row {
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px 24px;
+  border-bottom: 1px solid rgba(40,15,15,0.3);
+  transition: background .15s;
+}
+.mock-row:last-child { border-bottom: none; }
+.mock-row:hover { background: rgba(80,0,0,0.05); }
+.mock-rank {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Special Elite', serif; font-size: 12px;
+  border: 1px solid;
+  flex-shrink: 0;
+}
+.r1 { background: rgba(200,150,0,0.15); border-color: #c8960a; color: #c8960a; box-shadow: 0 0 10px rgba(200,150,0,0.3); }
+.r2 { background: rgba(160,160,160,0.1); border-color: #a0a0a0; color: #c0c0c0; }
+.r3 { background: rgba(150,80,0,0.12); border-color: #a05010; color: #c07030; }
+.rn { background: rgba(40,20,20,0.3); border-color: rgba(80,40,40,0.3); color: var(--text-dim); }
+.mock-name {
+  font-family: 'Libre Baskerville', serif; font-size: 13px;
+  font-weight: 700; color: var(--white); flex: 1;
+}
+.mock-score {
+  font-family: 'Special Elite', serif; font-size: 16px;
+  letter-spacing: .04em;
+}
+.mock-bar-wrap { width: 100px; }
+.mock-bar { height: 3px; background: rgba(80,40,40,0.2); }
+.mock-bar-fill { height: 100%; }
+.mock-tag {
+  font-family: 'Special Elite', serif;
+  font-size: 9px; letter-spacing: .12em; text-transform: uppercase;
+  padding: 3px 10px; border: 1px solid;
+}
+.tag-done { border-color: var(--green); color: var(--green); background: rgba(26,158,58,0.08); }
+.tag-live  { border-color: var(--amber); color: var(--amber); background: rgba(212,120,10,0.08); }
+
+/* ─────────────────────────────────────────
+   Warning Banner
+───────────────────────────────────────── */
+.warning-banner {
+  position: relative; z-index: 1;
+  background: rgba(100,0,0,0.12);
+  border-top: 1px solid rgba(180,20,20,0.2);
+  border-bottom: 1px solid rgba(180,20,20,0.2);
+  padding: 20px 40px;
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+  text-align: center;
+}
+.warn-icon { font-size: 20px; }
+.warn-text {
+  font-family: 'Special Elite', serif;
+  font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--red);
+}
+.warn-sub {
+  font-size: 11px; color: var(--text-dim);
+  font-style: italic; margin-top: 3px;
+}
+
+/* ─────────────────────────────────────────
+   Final CTA Section
+───────────────────────────────────────── */
+.final-cta {
+  position: relative; z-index: 1;
+  padding: 100px 40px;
+  text-align: center;
+  border-top: 1px solid rgba(60,20,20,0.2);
+}
+.final-cta-title {
+  font-family: 'Special Elite', serif;
+  font-size: clamp(28px, 5vw, 48px);
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--white); margin-bottom: 14px;
+  text-shadow: 0 0 30px rgba(200,200,200,0.05);
+}
+.final-cta-sub {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 15px; font-style: italic;
+  color: var(--text-dim); margin-bottom: 44px;
+  line-height: 1.8; max-width: 480px; margin-left: auto; margin-right: auto;
+}
+
+/* ─────────────────────────────────────────
+   Footer
+───────────────────────────────────────── */
+footer {
+  position: relative; z-index: 1;
+  border-top: 1px solid rgba(60,20,20,0.2);
+  padding: 28px 40px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px;
+}
+.footer-logo {
+  font-family: 'Special Elite', serif;
+  font-size: 13px; letter-spacing: .15em; text-transform: uppercase;
+}
+.footer-logo span { color: var(--red); }
+.footer-text {
+  font-size: 11px; color: var(--text-dim);
+  letter-spacing: .08em; font-style: italic;
+}
+.footer-links { display: flex; gap: 20px; }
+.footer-link {
+  font-family: 'Special Elite', serif;
+  font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--text-dim); text-decoration: none;
+  transition: color .2s;
+}
+.footer-link:hover { color: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- ── Christmas Lights ── -->
+<div class="lights-strip" id="lights-strip"></div>
+
+<!-- ── Nav ── -->
+<nav class="nav">
+  <div class="nav-logo">⬡ <span>HAWKINS</span> LAB</div>
+  <div class="nav-links">
+    <a href="#how" class="nav-link">How It Works</a>
+    <a href="#leaderboard" class="nav-link">Leaderboard</a>
+    <a href="/admin" class="nav-admin-btn">⬡ Admin</a>
+  </div>
+</nav>
+
+<!-- ── Hero ── -->
+<section class="hero" id="hero">
+  <div class="scanline"></div>
+
+  <div class="hero-eyebrow">Hawkins National Laboratory · Classified Event · 1986</div>
+
+  <div class="hero-title">STRANGER<br>THINGS</div>
+  <div class="hero-sub">Quiz Night</div>
+
+  <div class="hero-divider"></div>
+
+  <p class="hero-desc">
+    Welcome to the Lab. Your team has been cleared for access.<br>
+    Navigate the Upside Down — answer wisely, survive the questions.
+  </p>
+
+  <div class="quiz-meta">
+    <div class="meta-badge">
+      <span class="meta-val">60</span>
+      <span class="meta-label">Questions</span>
+    </div>
+    <div class="meta-badge">
+      <span class="meta-val">3</span>
+      <span class="meta-label">Sections</span>
+    </div>
+    <div class="meta-badge">
+      <span class="meta-val">45</span>
+      <span class="meta-label">Min Timer</span>
+    </div>
+    <div class="meta-badge">
+      <span class="meta-val">–½</span>
+      <span class="meta-label">Negative Marking</span>
+    </div>
+    <div class="meta-badge live-badge">
+      <span class="live-dot"></span>
+      <span class="meta-label">Live</span>
+    </div>
+  </div>
+
+  <div class="cta-group">
+    <a href="/quiz" class="cta-btn cta-primary">⬡ &nbsp; Enter The Lab</a>
+    <a href="/admin" class="cta-btn cta-secondary">⬡ &nbsp; Control Room</a>
+  </div>
+
+  <div class="section-eyebrow">What awaits your team</div>
+
+  <div class="features">
+    <div class="feat-card fc-red">
+      <div class="feat-icon">🔴</div>
+      <div class="feat-title">Easy Sector</div>
+      <div class="feat-desc">15 questions. Standard Hawkins intel. Every agent begins here.</div>
+    </div>
+    <div class="feat-card fc-amber">
+      <div class="feat-icon">🟠</div>
+      <div class="feat-title">Medium Sector</div>
+      <div class="feat-desc">30 questions. Upside Down territory. Tread carefully.</div>
+    </div>
+    <div class="feat-card fc-purple">
+      <div class="feat-icon">🟣</div>
+      <div class="feat-title">Advanced Sector</div>
+      <div class="feat-desc">15 questions. Deep Lab access. Only the brave proceed.</div>
+    </div>
+    <div class="feat-card fc-green">
+      <div class="feat-icon">👁</div>
+      <div class="feat-title">Live Monitoring</div>
+      <div class="feat-desc">The admin watches all. Tab switches are logged. The Mind Flayer sees.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Warning Banner ── -->
+<div class="warning-banner">
+  <span class="warn-icon">⚠</span>
+  <div>
+    <div class="warn-text">Integrity Protocol Active — Tab Switches Are Monitored</div>
+    <div class="warn-sub">Switching tabs during the quiz will be flagged in the admin control room</div>
+  </div>
+  <span class="warn-icon">⚠</span>
+</div>
+
+<!-- ── How It Works ── -->
+<section class="how-section" id="how">
+  <div class="how-title">How It Works</div>
+  <p class="how-sub">From clearance to scoreboard — your mission briefing</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-icon">🔑</div>
+      <div class="step-title">Get Your Code</div>
+      <div class="step-desc">Receive your team ID and password from the Quiz Master before the event.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-icon">🚪</div>
+      <div class="step-title">Enter The Lab</div>
+      <div class="step-desc">Log in with your credentials. Enter your team name and member names.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-icon">🧠</div>
+      <div class="step-title">Answer Questions</div>
+      <div class="step-desc">Work through Easy, Medium, and Advanced sections before the timer expires.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">04</div>
+      <div class="step-icon">📡</div>
+      <div class="step-title">Submit & Score</div>
+      <div class="step-desc">Submit your answers. Results appear live on the leaderboard instantly.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Mock Leaderboard ── -->
+<section class="preview-section" id="leaderboard">
+  <div class="section-heading">Live Leaderboard</div>
+  <p class="section-subheading">Results update in real-time as teams submit. The Mind Flayer ranks all.</p>
+
+  <div class="preview-card">
+    <div class="preview-header">
+      <div class="preview-header-title">🏆 Current Rankings</div>
+      <div class="preview-header-live"><span class="live-dot"></span> LIVE</div>
+    </div>
+
+    <div class="mock-row">
+      <div class="mock-rank r1">1</div>
+      <div class="mock-name">Hawkins Heroes</div>
+      <div class="mock-bar-wrap">
+        <div class="mock-bar"><div class="mock-bar-fill" style="width:88%;background:var(--red)"></div></div>
+      </div>
+      <div class="mock-score" style="color:var(--red)">88%</div>
+      <div class="mock-tag tag-done">✓ Done</div>
+    </div>
+    <div class="mock-row">
+      <div class="mock-rank r2">2</div>
+      <div class="mock-name">The Demogorgons</div>
+      <div class="mock-bar-wrap">
+        <div class="mock-bar"><div class="mock-bar-fill" style="width:74%;background:var(--amber)"></div></div>
+      </div>
+      <div class="mock-score" style="color:var(--amber)">74%</div>
+      <div class="mock-tag tag-done">✓ Done</div>
+    </div>
+    <div class="mock-row">
+      <div class="mock-rank r3">3</div>
+      <div class="mock-name">Upside Down Gang</div>
+      <div class="mock-bar-wrap">
+        <div class="mock-bar"><div class="mock-bar-fill" style="width:61%;background:#c07030"></div></div>
+      </div>
+      <div class="mock-score" style="color:#c07030">61%</div>
+      <div class="mock-tag tag-done">✓ Done</div>
+    </div>
+    <div class="mock-row">
+      <div class="mock-rank rn">4</div>
+      <div class="mock-name">Mind Flayer Fan Club</div>
+      <div class="mock-bar-wrap">
+        <div class="mock-bar"><div class="mock-bar-fill" style="width:0%;background:var(--amber)"></div></div>
+      </div>
+      <div class="mock-score" style="color:var(--text-dim)">—</div>
+      <div class="mock-tag tag-live">● Active</div>
+    </div>
+    <div class="mock-row">
+      <div class="mock-rank rn">5</div>
+      <div class="mock-name">Eleven's Army</div>
+      <div class="mock-bar-wrap">
+        <div class="mock-bar"><div class="mock-bar-fill" style="width:0%;background:var(--amber)"></div></div>
+      </div>
+      <div class="mock-score" style="color:var(--text-dim)">—</div>
+      <div class="mock-tag tag-live">● Active</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Final CTA ── -->
+<section class="final-cta">
+  <div class="final-cta-title">Ready to Face<br>The Upside Down?</div>
+  <p class="final-cta-sub">
+    Your team awaits. The clock is ticking.<br>
+    Don't let the Mind Flayer win.
+  </p>
+  <div class="cta-group">
+    <a href="/quiz" class="cta-btn cta-primary">⬡ &nbsp; Begin The Quiz</a>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+  <div class="footer-logo">⬡ <span>HAWKINS</span> NATIONAL LABORATORY</div>
+  <div class="footer-text">All activity monitored · Authorized personnel only · 1986</div>
+  <div class="footer-links">
+    <a href="/quiz" class="footer-link">Enter Lab</a>
+    <a href="/admin" class="footer-link">Admin</a>
+  </div>
+</footer>
+
+<script>
+// ── Generate Christmas Lights ──
+(function () {
+  const strip = document.getElementById('lights-strip');
+  const colors = ['lb-red','lb-amber','lb-green','lb-blue','lb-yellow','lb-purple','lb-white'];
+  const count = Math.floor(window.innerWidth / 22) || 50;
+  for (let i = 0; i < count; i++) {
+    const b = document.createElement('div');
+    b.className = 'light-bulb ' + colors[i % colors.length];
+    b.style.animationDelay = (Math.random() * 8) + 's';
+    b.style.animationDuration = (6 + Math.random() * 6) + 's';
+    strip.appendChild(b);
+  }
+})();
+
+// ── Smooth scroll for nav links ──
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', function (e) {
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+
+// ── Animate stats on scroll (Intersection Observer) ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.style.opacity = '1';
+      entry.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.feat-card, .step, .mock-row').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(20px)';
+  el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+  observer.observe(el);
+});
+</script>
+</body>
+</html>
