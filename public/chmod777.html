@@ -280,11 +280,50 @@ body::after {
 
 /* Password display box */
 .pw-box{display:inline-flex;align-items:center;gap:10px;background:rgba(0,0,0,0.6);border:1px solid rgba(80,40,40,0.2);padding:8px 16px;font-family:'Courier Prime',monospace;font-size:14px;color:var(--amber);letter-spacing:.1em}
+
+/* collapse of alerts styles */
+.alert-item {
+  position: relative;
+  overflow: hidden;
+  max-height: 80px;
+  opacity: 1;
+  transition: max-height 0.35s ease, opacity 0.35s ease,
+              padding 0.35s ease, margin 0.35s ease;
+}
+
+.alert-item.alert-collapsed {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin: 0;
+}
+
+.alert-collapse-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-dim);
+  font-size: 12px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.alert-collapse-btn:hover { opacity: 0.7; }
+
+.alert-timer-bar {
+  position: absolute;
+  bottom: 0; left: 0;
+  height: 2px;
+  background: var(--accent-color, #6c63ff);
+  border-radius: 0;
+}
 </style>
 </head>
 <body>
 
-<div class="lights-strip" id="lights-strip"></div>
+<!-- <div class="lights-strip" id="lights-strip"></div> -->
 
 <!-- Alert toast for real-time tab switch events -->
 <div class="alert-toast" id="alert-toast">
@@ -519,29 +558,96 @@ function showAlertToast(teamName, count) {
   toastTimer = setTimeout(() => toast.classList.remove('show'), 5000);
 }
 
-function renderAlerts() {
-  const list = document.getElementById('alert-list');
-  const count = document.getElementById('alert-count-label');
-  if (tabAlerts.length === 0) {
-    list.innerHTML = '<div class="no-alerts">No tab switches detected yet. The Mind Flayer is watching...</div>';
-    count.textContent = '';
-    return;
-  }
-  count.textContent = `(${tabAlerts.length} team${tabAlerts.length !== 1 ? 's' : ''} flagged)`;
-  const sorted = [...tabAlerts].sort((a,b) => b.timestamp - a.timestamp);
-  list.innerHTML = sorted.map(a => {
-    const d = new Date(a.timestamp);
-    const timeStr = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    return `<div class="alert-item">
+  const alertTimers = {};
+
+  function renderAlerts() {
+    const list = document.getElementById('alert-list');
+    const count = document.getElementById('alert-count-label');
+
+    if (tabAlerts.length === 0) {
+      list.innerHTML = '<div class="no-alerts">No tab switches detected yet. The Mind Flayer is watching...</div>';
+      count.textContent = '';
+      return;
+    }
+
+    count.textContent = `(${tabAlerts.length} team${tabAlerts.length !== 1 ? 's' : ''} flagged)`;
+
+    const sorted = [...tabAlerts].sort((a, b) => b.timestamp - a.timestamp);
+
+    sorted.forEach(a => {
+      // Update existing alert in-place instead of re-rendering
+      const existing = document.getElementById(`alert-${a.teamId}`);
+      if (existing) {
+        existing.querySelector('.alert-count').textContent = `${a.count}×`;
+        existing.querySelector('.alert-detail').textContent =
+          `Tab switch detected · Last at ${fmtAlertTime(a.timestamp)}`;
+        resetAlertTimer(a.teamId); // reset the 2s countdown on new activity
+        return;
+      }
+
+      const el = document.createElement('div');
+      el.className = 'alert-item';
+      el.id = `alert-${a.teamId}`;
+      el.innerHTML = `
       <span class="alert-icon">👁</span>
       <div>
-        <div class="alert-team">${a.teamName} <span style="font-size:10px;color:var(--text-dim)">(${a.teamId})</span></div>
-        <div class="alert-detail">Tab switch detected · Last at ${timeStr}</div>
+        <div class="alert-team">
+          ${a.teamName}
+          <span style="font-size:10px;color:var(--text-dim)">(${a.teamId})</span>
+        </div>
+        <div class="alert-detail">
+          Tab switch detected · Last at ${fmtAlertTime(a.timestamp)}
+        </div>
       </div>
       <div class="alert-count">${a.count}×</div>
-    </div>`;
-  }).join('');
-}
+      <button class="alert-collapse-btn" aria-label="Dismiss"
+        onclick="dismissAlert('${a.teamId}')">✕</button>
+      <div class="alert-timer-bar" id="alert-bar-${a.teamId}"></div>
+    `;
+      list.prepend(el);
+      startAlertTimer(a.teamId);
+    });
+  }
+
+  function fmtAlertTime(ts) {
+    return new Date(ts).toLocaleTimeString('en-IN', {
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+  }
+
+  function startAlertTimer(teamId) {
+    animateAlertBar(teamId, 2000);
+    alertTimers[teamId] = setTimeout(() => dismissAlert(teamId), 2000);
+  }
+
+  function resetAlertTimer(teamId) {
+    clearTimeout(alertTimers[teamId]);
+    startAlertTimer(teamId);
+  }
+
+  function animateAlertBar(teamId, duration) {
+    const bar = document.getElementById(`alert-bar-${teamId}`);
+    if (!bar) return;
+    bar.style.transition = 'none';
+    bar.style.width = '100%';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      bar.style.transition = `width ${duration}ms linear`;
+      bar.style.width = '0%';
+    }));
+  }
+
+  function dismissAlert(teamId) {
+    const el = document.getElementById(`alert-${teamId}`);
+    if (!el) return;
+    clearTimeout(alertTimers[teamId]);
+    el.classList.add('alert-collapsed');
+    setTimeout(() => {
+      const idx = tabAlerts.findIndex(a => a.teamId === teamId);
+      if (idx !== -1) tabAlerts.splice(idx, 1);
+      el.remove();
+      renderAlerts(); // refresh count label
+    }, 350);
+  }
 
 function updateSwitchTotal() {
   const total = tabAlerts.reduce((s, a) => s + a.count, 0);
