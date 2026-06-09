@@ -725,6 +725,7 @@ footer {
 // ── Generate Christmas Lights ──
 (function () {
   const strip = document.getElementById('lights-strip');
+  if (!strip) return;
   const colors = ['lb-red','lb-amber','lb-green','lb-blue','lb-yellow','lb-purple','lb-white'];
   const count = Math.floor(window.innerWidth / 22) || 50;
   for (let i = 0; i < count; i++) {

@@ -1,22 +1,33 @@
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
+const compression = require('compression');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const cors = require('cors');
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({ server, perMessageDeflate: false });
 
-app.use(express.json());
+app.use(compression());
+app.use(express.json({ limit: '64kb' }));
 app.use(cors());
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, '../public'), {
+  maxAge: process.env.NODE_ENV === 'production' ? '1h' : 0,
+  setHeaders(res, filePath) {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  }
+}));
 
 // ──────────────────────────────
 //  IN-MEMORY STATE  (survives refreshes)
 // ──────────────────────────────
 const ADMIN_PASSWORD = 'chmod777';
+
+const CREDENTIALS_BY_ID = new Map();
 
 const TEAM_CREDENTIALS = [
   { id: 'TEAM01', pass: 'hawk#9271', name: 'Team Mike'   },
@@ -42,12 +53,20 @@ const TEAM_CREDENTIALS = [
   { id: 'TEAM21', pass: 'nancy*6617', name: 'Team Dr. Alexei '   },
 ];
 
+for (const cred of TEAM_CREDENTIALS) {
+  CREDENTIALS_BY_ID.set(cred.id, cred);
+}
+
 // teamId -> { id, name, submitted, answers, startedAt, usedSeconds,
 //             questionOrder, tabSwitchCount, lastActive, sessionToken }
 const teamState = new Map();
 
 // WebSocket clients: { ws, role, teamId }
 const wsClients = new Set();
+
+app.get('/api/health', (_req, res) => {
+  res.json({ ok: true, teams: teamState.size, uptime: process.uptime() });
+});
 
 // ──────────────────────────────
 //  HELPERS
@@ -66,12 +85,20 @@ function broadcastToAdmins(data) {
 }
 
 function shuffleArray(arr) {
-  const a = [...arr];
+  const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+function createQuestionOrder() {
+  return [
+    ...shuffleArray(Array.from({ length: 15 }, (_, i) => i)),
+    ...shuffleArray(Array.from({ length: 30 }, (_, i) => i + 15)),
+    ...shuffleArray(Array.from({ length: 15 }, (_, i) => i + 45))
+  ];
 }
 
 function getPublicState(team) {
@@ -92,8 +119,8 @@ function getPublicState(team) {
 app.post('/api/team/login', (req, res) => {
   const { teamId, pass, members } = req.body;
   const id = (teamId || '').trim().toUpperCase();
-  const cred = TEAM_CREDENTIALS.find(c => c.id === id && c.pass === pass);
-  if (!cred) return res.status(401).json({ error: 'Invalid credentials' });
+  const cred = CREDENTIALS_BY_ID.get(id);
+  if (!cred || cred.pass !== pass) return res.status(401).json({ error: 'Invalid credentials' });
 
   let state = teamState.get(id);
   if (state && state.submitted) {
@@ -102,20 +129,7 @@ app.post('/api/team/login', (req, res) => {
 
   const sessionToken = uuidv4();
   if (!state) {
-  // Generate ranges automatically
-  const easyIdx = shuffleArray(
-    Array.from({ length: 15 }, (_, i) => i)
-  );
-
-  const medIdx = shuffleArray(
-    Array.from({ length: 30 }, (_, i) => i + 15)
-  );
-
-  const hardIdx = shuffleArray(
-    Array.from({ length: 15 }, (_, i) => i + 45)
-  );
-
-  const questionOrder = [...easyIdx, ...medIdx, ...hardIdx];
+  const questionOrder = createQuestionOrder();
 
   state = {
     id,
@@ -244,7 +258,7 @@ app.post('/api/quiz/submit', (req, res) => {
   state.submittedAt = Date.now();
 
   // Calculate scores using original question indices mapped back
-  const QUESTIONS_FLAT = getAllQuestions();
+  const QUESTIONS_FLAT = ALL_QUESTIONS;
   let correct = 0, eC = 0, mC = 0, hC = 0;
   state.questionOrder.forEach((origIdx, orderPos) => {
     const q = QUESTIONS_FLAT[origIdx];
@@ -528,13 +542,20 @@ function getAllQuestions() {
     ];*/
 }
 
+const ALL_QUESTIONS = getAllQuestions();
+const QUESTIONS_JSON = JSON.stringify(ALL_QUESTIONS);
+
 app.get('/api/questions', (req, res) => {
-  res.json(getAllQuestions());
+  res.set('Cache-Control', 'public, max-age=86400, immutable');
+  res.type('application/json').send(QUESTIONS_JSON);
 });
 
 // ──────────────────────────────
 //  START
 // ──────────────────────────────
+server.keepAliveTimeout = 65000;
+server.headersTimeout = 66000;
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`🔴 Stranger Things Quiz running on http://localhost:${PORT}`);

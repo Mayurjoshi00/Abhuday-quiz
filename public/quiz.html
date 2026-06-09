@@ -5,9 +5,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Upside Down — UI/UX Quiz Championship</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
     href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Special+Elite&display=swap"
-    rel="stylesheet">
+    rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Special+Elite&display=swap"
+      rel="stylesheet">
+  </noscript>
   <style>
     /* ── PROTECTION: disable selection, drag, print ── */
     * {
@@ -91,7 +98,7 @@
     }
 
     body {
-      font-family: 'Courier Prime', monospace;
+      font-family: 'Courier Prime', 'Courier New', Courier, monospace;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
@@ -1601,7 +1608,7 @@
           <input type="text" id="login-members-input" placeholder="e.g. Mike, Eleven, Dustin" autocomplete="off">
         </div>
         <div class="input-err" id="login-err"></div>
-        <button class="start-btn" onclick="teamLogin()">
+        <button class="start-btn" id="login-btn" onclick="teamLogin()">
           <span>⬡</span> Enter the Upside Down
         </button>
       </div>
@@ -1818,6 +1825,9 @@
 
   <script>
     const API = '';
+    const questionsPromise = fetch(API + '/api/questions')
+      .then(r => r.json())
+      .catch(() => []);
     let currentTeam = null;
     let sessionToken = null;
     let questionOrder = [];
@@ -1881,26 +1891,6 @@
        END PROTECTION BLOCK
        ══════════════════════════════════════════ */
 
-    // ── Christmas lights ──
-    (function buildLights() {
-      const strip = document.getElementById('lights-strip');
-      const colors = ['lb-red', 'lb-amber', 'lb-green', 'lb-blue', 'lb-yellow', 'lb-purple', 'lb-white'];
-      const count = Math.floor(window.outerWidth / 18);
-      for (let i = 0; i < count; i++) {
-        const b = document.createElement('div');
-        b.className = 'light-bulb ' + colors[i % colors.length];
-        b.style.animationDelay = (Math.random() * 8) + 's';
-        b.style.animationDuration = (6 + Math.random() * 6) + 's';
-        strip.appendChild(b);
-      }
-    })();
-
-    // ── Connecting → Login transition ──
-    setTimeout(() => {
-      showScreen('team-login');
-      document.getElementById('connecting').remove();
-    }, 1200);
-
     function showScreen(id) {
       document.querySelectorAll('.screen').forEach(s => {
         s.classList.remove('active'); s.classList.remove('fade-in');
@@ -1937,12 +1927,21 @@
       if (sessionToken) reportTabSwitch();
     });
 
+    function fetchWithTimeout(url, options = {}, ms = 30000) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), ms);
+      return fetch(url, { ...options, signal: controller.signal })
+        .finally(() => clearTimeout(timer));
+    }
+
     // ── Team Login ──
     async function teamLogin() {
       const id = document.getElementById('login-id-input').value.trim();
       const pass = document.getElementById('login-pass-input').value;
       const members = document.getElementById('login-members-input').value.trim();
       const errEl = document.getElementById('login-err');
+      const loginBtn = document.getElementById('login-btn');
+      const loginBtnDefault = '<span>⬡</span> Enter the Upside Down';
       errEl.style.display = 'none';
 
       if (!id || !pass) {
@@ -1951,8 +1950,12 @@
         return;
       }
 
+      if (loginBtn.disabled) return;
+      loginBtn.disabled = true;
+      loginBtn.innerHTML = '<span>●</span> Opening the gate...';
+
       try {
-        const res = await fetch(API + '/api/team/login', {
+        const res = await fetchWithTimeout(API + '/api/team/login', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ teamId: id, pass, members })
         });
@@ -1969,18 +1972,46 @@
         totalSeconds = data.totalSeconds;
         usedSeconds = data.usedSeconds;
         currentTeam = { teamId: data.teamId, name: data.teamName };
-
-        const qRes = await fetch(API + '/api/questions');
-        allQuestions = await qRes.json();
+        allQuestions = await questionsPromise;
+        if (!allQuestions.length) {
+          const qRes = await fetchWithTimeout(API + '/api/questions');
+          allQuestions = await qRes.json();
+        }
 
         document.getElementById('team-greeting').textContent = `Welcome back, ${data.teamName}! 👋`;
         showScreen('landing');
-        connectWS();
       } catch (e) {
-        errEl.textContent = 'Could not reach the server. Try again.';
+        errEl.textContent = e.name === 'AbortError'
+          ? 'Server is busy — please wait a moment and try again.'
+          : 'Could not reach the server. Try again.';
         errEl.style.display = 'block';
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = loginBtnDefault;
       }
     }
+
+    // ── Christmas lights (optional decorative strip) ──
+    (function buildLights() {
+      const strip = document.getElementById('lights-strip');
+      if (!strip) return;
+      const colors = ['lb-red', 'lb-amber', 'lb-green', 'lb-blue', 'lb-yellow', 'lb-purple', 'lb-white'];
+      const count = Math.floor(window.outerWidth / 18);
+      for (let i = 0; i < count; i++) {
+        const b = document.createElement('div');
+        b.className = 'light-bulb ' + colors[i % colors.length];
+        b.style.animationDelay = (Math.random() * 8) + 's';
+        b.style.animationDuration = (6 + Math.random() * 6) + 's';
+        strip.appendChild(b);
+      }
+    })();
+
+    // ── Connecting → Login transition ──
+    setTimeout(() => {
+      showScreen('team-login');
+      const connecting = document.getElementById('connecting');
+      if (connecting) connecting.remove();
+    }, 200);
 
     // ── WebSocket ──
     let ws;
@@ -2001,6 +2032,7 @@
       renderQuestion(0);
       startTimer();
       startHeartbeat();
+      connectWS();
       updateProgress();
     }
 

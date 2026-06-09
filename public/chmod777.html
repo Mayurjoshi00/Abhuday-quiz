@@ -457,6 +457,7 @@ const tabAlerts = []; // { teamId, teamName, count, timestamp }
 // ── Lights ──
 (function(){
   const strip = document.getElementById('lights-strip');
+  if (!strip) return;
   const colors = ['lb-red','lb-amber','lb-green','lb-blue','lb-yellow','lb-purple','lb-white'];
   const count = Math.floor(window.innerWidth / 22);
   for (let i = 0; i < count; i++) {
@@ -466,8 +467,8 @@ const tabAlerts = []; // { teamId, teamName, count, timestamp }
     b.style.animationDuration = (6 + Math.random() * 6) + 's';
     strip.appendChild(b);
   }
-  document.getElementById('pw-display').textContent = ADMIN_PASSWORD;
 })();
+document.getElementById('pw-display').textContent = ADMIN_PASSWORD;
 
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); s.classList.remove('fade-in'); });
